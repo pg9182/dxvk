@@ -1029,9 +1029,6 @@ namespace dxvk {
     
     D3D11_BLEND_DESC1 desc = D3D11BlendState::PromoteDesc(pBlendStateDesc);
     
-    if (FAILED(D3D11BlendState::NormalizeDesc(&desc)))
-      return E_INVALIDARG;
-    
     if (ppBlendState != nullptr) {
       *ppBlendState = m_bsStateObjects.Create(this, desc);
       return S_OK;
@@ -1046,14 +1043,9 @@ namespace dxvk {
     
     if (!pBlendStateDesc)
       return E_INVALIDARG;
-
-    D3D11_BLEND_DESC1 desc = *pBlendStateDesc;
-    
-    if (FAILED(D3D11BlendState::NormalizeDesc(&desc)))
-      return E_INVALIDARG;
     
     if (ppBlendState != nullptr) {
-      *ppBlendState = m_bsStateObjects.Create(this, desc);
+      *ppBlendState = m_bsStateObjects.Create(this, *pBlendStateDesc);
       return S_OK;
     } return S_FALSE;
   }

@@ -707,8 +707,6 @@ namespace dxvk {
     
     void ApplyPrimitiveTopology();
     
-    void ApplyBlendState();
-    
     void ApplyBlendFactor();
     
     void ApplyDepthStencilState();

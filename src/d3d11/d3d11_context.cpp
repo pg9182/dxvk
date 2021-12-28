@@ -2342,14 +2342,7 @@ namespace dxvk {
     const FLOAT                             BlendFactor[4],
           UINT                              SampleMask) {    
     auto blendState = static_cast<D3D11BlendState*>(pBlendState);
-    
-    if (m_state.om.cbState    != blendState
-     || m_state.om.sampleMask != SampleMask) {
-      m_state.om.cbState    = blendState;
-      m_state.om.sampleMask = SampleMask;
-      
-      ApplyBlendState();
-    }
+
     
     if (BlendFactor != nullptr) {
       for (uint32_t i = 0; i < 4; i++)
@@ -2728,33 +2721,6 @@ namespace dxvk {
     EmitCs([iaState] (DxvkContext* ctx) {
       ctx->setInputAssemblyState(iaState);
     });
-  }
-  
-  
-  void D3D11DeviceContext::ApplyBlendState() {
-    if (m_state.om.cbState != nullptr) {
-      EmitCs([
-        cBlendState = m_state.om.cbState,
-        cSampleMask = m_state.om.sampleMask
-      ] (DxvkContext* ctx) {
-        cBlendState->BindToContext(ctx, cSampleMask);
-      });
-    } else {
-      EmitCs([
-        cSampleMask = m_state.om.sampleMask
-      ] (DxvkContext* ctx) {
-        DxvkBlendMode cbState;
-        DxvkLogicOpState loState;
-        DxvkMultisampleState msState;
-        InitDefaultBlendState(&cbState, &loState, &msState, cSampleMask);
-
-        for (uint32_t i = 0; i < D3D11_SIMULTANEOUS_RENDER_TARGET_COUNT; i++)
-          ctx->setBlendMode(i, cbState);
-
-        ctx->setLogicOpState(loState);
-        ctx->setMultisampleState(msState);
-      });
-    }
   }
   
   
@@ -3807,7 +3773,6 @@ namespace dxvk {
     
     ApplyInputLayout();
     ApplyPrimitiveTopology();
-    ApplyBlendState();
     ApplyBlendFactor();
     ApplyDepthStencilState();
     ApplyStencilRef();
