@@ -13,7 +13,6 @@
 #include "d3d11_context_imm.h"
 #include "d3d11_device.h"
 #include "d3d11_input_layout.h"
-#include "d3d11_interop.h"
 #include "d3d11_query.h"
 #include "d3d11_resource.h"
 #include "d3d11_sampler.h"
@@ -21,7 +20,6 @@
 #include "d3d11_state_object.h"
 #include "d3d11_swapchain.h"
 #include "d3d11_texture.h"
-#include "d3d11_video.h"
 
 namespace dxvk {
   
@@ -43,12 +41,10 @@ namespace dxvk {
     m_dxbcOptions   (m_dxvkDevice, m_d3d11Options) {
     m_initializer = new D3D11Initializer(this);
     m_context     = new D3D11ImmediateContext(this, m_dxvkDevice);
-    m_d3d10Device = new D3D10Device(this, m_context.ptr());
   }
   
   
   D3D11Device::~D3D11Device() {
-    delete m_d3d10Device;
     m_context = nullptr;
     delete m_initializer;
   }
@@ -1313,9 +1309,7 @@ namespace dxvk {
     if (!pFeatureLevels || FeatureLevels == 0)
       return E_INVALIDARG;
     
-    if (EmulatedInterface != __uuidof(ID3D10Device)
-     && EmulatedInterface != __uuidof(ID3D10Device1)
-     && EmulatedInterface != __uuidof(ID3D11Device)
+    if (EmulatedInterface != __uuidof(ID3D11Device)
      && EmulatedInterface != __uuidof(ID3D11Device1))
       return E_INVALIDARG;
     
@@ -1567,15 +1561,6 @@ namespace dxvk {
           return E_INVALIDARG;
         
         return GetFormatSupportFlags(info->InFormat, nullptr, &info->OutFormatSupport2);
-      } return S_OK;
-      
-      case D3D11_FEATURE_D3D10_X_HARDWARE_OPTIONS: {
-        auto info = static_cast<D3D11_FEATURE_DATA_D3D10_X_HARDWARE_OPTIONS*>(pFeatureSupportData);
-
-        if (FeatureSupportDataSize != sizeof(*info))
-          return E_INVALIDARG;
-        
-        info->ComputeShaders_Plus_RawAndStructuredBuffers_Via_Shader_4_x = TRUE;
       } return S_OK;
       
       case D3D11_FEATURE_D3D11_OPTIONS: {
@@ -2125,8 +2110,7 @@ namespace dxvk {
         flags1 |= D3D11_FORMAT_SUPPORT_TEXTURECUBE
                |  D3D11_FORMAT_SUPPORT_SHADER_LOAD
                |  D3D11_FORMAT_SUPPORT_SHADER_GATHER
-               |  D3D11_FORMAT_SUPPORT_SHADER_SAMPLE
-               |  D3D11_FORMAT_SUPPORT_VIDEO_PROCESSOR_INPUT;
+               |  D3D11_FORMAT_SUPPORT_SHADER_SAMPLE;
         
         if (depthFormat != VK_FORMAT_UNDEFINED) {
           flags1 |= D3D11_FORMAT_SUPPORT_SHADER_GATHER_COMPARISON
@@ -2137,8 +2121,7 @@ namespace dxvk {
       // Format is a color format that can be used for rendering
       if (imgFeatures & VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT) {
         flags1 |= D3D11_FORMAT_SUPPORT_RENDER_TARGET
-               |  D3D11_FORMAT_SUPPORT_MIP_AUTOGEN
-               |  D3D11_FORMAT_SUPPORT_VIDEO_PROCESSOR_OUTPUT;
+               |  D3D11_FORMAT_SUPPORT_MIP_AUTOGEN;
         
         if (m_dxvkDevice->features().core.features.logicOp)
           flags2 |= D3D11_FORMAT_SUPPORT2_OUTPUT_MERGER_LOGIC_OP;
@@ -2397,574 +2380,6 @@ namespace dxvk {
       ? entry->second
       : D3D_FEATURE_LEVEL_11_1;
   }
-  
-
-
-
-  D3D11DeviceExt::D3D11DeviceExt(
-          D3D11DXGIDevice*        pContainer,
-          D3D11Device*            pDevice)
-  : m_container(pContainer), m_device(pDevice) {
-    
-  }
-  
-  
-  ULONG STDMETHODCALLTYPE D3D11DeviceExt::AddRef() {
-    return m_container->AddRef();
-  }
-  
-  
-  ULONG STDMETHODCALLTYPE D3D11DeviceExt::Release() {
-    return m_container->Release();
-  }
-  
-  
-  HRESULT STDMETHODCALLTYPE D3D11DeviceExt::QueryInterface(
-          REFIID                  riid,
-          void**                  ppvObject) {
-    return m_container->QueryInterface(riid, ppvObject);
-  }
-  
-  
-  BOOL STDMETHODCALLTYPE D3D11DeviceExt::GetExtensionSupport(
-          D3D11_VK_EXTENSION      Extension) {
-    const auto& deviceFeatures = m_device->GetDXVKDevice()->features();
-    const auto& deviceExtensions = m_device->GetDXVKDevice()->extensions();
-    
-    switch (Extension) {
-      case D3D11_VK_EXT_BARRIER_CONTROL:
-        return true;
-      
-      case D3D11_VK_EXT_MULTI_DRAW_INDIRECT:
-        return deviceFeatures.core.features.multiDrawIndirect;
-        
-      case D3D11_VK_EXT_MULTI_DRAW_INDIRECT_COUNT:
-        return deviceFeatures.core.features.multiDrawIndirect
-            && deviceExtensions.khrDrawIndirectCount;
-      
-      case D3D11_VK_EXT_DEPTH_BOUNDS:
-        return deviceFeatures.core.features.depthBounds;
-
-      case D3D11_VK_NVX_IMAGE_VIEW_HANDLE:
-        return deviceExtensions.nvxImageViewHandle;
-
-      case D3D11_VK_NVX_BINARY_IMPORT:
-        return deviceExtensions.nvxBinaryImport
-            && deviceExtensions.khrBufferDeviceAddress;
-
-      default:
-        return false;
-    }
-  }
-  
-  
-  bool STDMETHODCALLTYPE D3D11DeviceExt::GetCudaTextureObjectNVX(uint32_t srvDriverHandle, uint32_t samplerDriverHandle, uint32_t* pCudaTextureHandle) {
-    ID3D11ShaderResourceView* srv = HandleToSrvNVX(srvDriverHandle);
-
-    if (!srv) {
-      Logger::warn(str::format("GetCudaTextureObjectNVX() failure - srv handle wasn't found: ", srvDriverHandle));
-      return false;
-    }
-
-    ID3D11SamplerState* samplerState = HandleToSamplerNVX(samplerDriverHandle);
-
-    if (!samplerState) {
-      Logger::warn(str::format("GetCudaTextureObjectNVX() failure - sampler handle wasn't found: ", samplerDriverHandle));
-      return false;
-    }
-
-    D3D11SamplerState* pSS = static_cast<D3D11SamplerState*>(samplerState);
-    Rc<DxvkSampler> pDSS = pSS->GetDXVKSampler();
-    VkSampler vkSampler = pDSS->handle();
-
-    D3D11ShaderResourceView* pSRV = static_cast<D3D11ShaderResourceView*>(srv);
-    Rc<DxvkImageView> pIV = pSRV->GetImageView();
-    VkImageView vkImageView = pIV->handle();
-
-    VkImageViewHandleInfoNVX imageViewHandleInfo = {VK_STRUCTURE_TYPE_IMAGE_VIEW_HANDLE_INFO_NVX};
-    imageViewHandleInfo.imageView = vkImageView;
-    imageViewHandleInfo.sampler = vkSampler;
-    imageViewHandleInfo.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-
-    // note: there's no implicit lifetime management here; it's up to the
-    // app to keep the sampler and SRV alive as long as it wants to use this
-    // derived handle.
-    VkDevice vkDevice = m_device->GetDXVKDevice()->handle();
-    *pCudaTextureHandle = m_device->GetDXVKDevice()->vkd()->vkGetImageViewHandleNVX(vkDevice, &imageViewHandleInfo);
-
-    if (!*pCudaTextureHandle) {
-      Logger::warn("GetCudaTextureObjectNVX() handle==0 - failed");
-      return false;
-    }
-
-    return true;
-  }
-  
-
-  bool STDMETHODCALLTYPE D3D11DeviceExt::CreateCubinComputeShaderWithNameNVX(const void* pCubin, uint32_t size,
-      uint32_t blockX, uint32_t blockY, uint32_t blockZ, const char* pShaderName, IUnknown** phShader) {
-    Rc<DxvkDevice> dxvkDevice = m_device->GetDXVKDevice();
-    VkDevice vkDevice = dxvkDevice->handle();
-
-    VkCuModuleCreateInfoNVX moduleCreateInfo = { VK_STRUCTURE_TYPE_CU_MODULE_CREATE_INFO_NVX };
-    moduleCreateInfo.pData = pCubin;
-    moduleCreateInfo.dataSize = size;
-
-    VkCuModuleNVX cuModule;
-    VkCuFunctionNVX cuFunction;
-    VkResult result;
-
-    if ((result = dxvkDevice->vkd()->vkCreateCuModuleNVX(vkDevice, &moduleCreateInfo, nullptr, &cuModule))) {
-      Logger::warn(str::format("CreateCubinComputeShaderWithNameNVX() - failure to create module - result=", result, " pcubindata=", pCubin, " cubinsize=", size));
-      return false; // failure
-    }
-
-    VkCuFunctionCreateInfoNVX functionCreateInfo = { VK_STRUCTURE_TYPE_CU_FUNCTION_CREATE_INFO_NVX };
-    functionCreateInfo.module = cuModule;
-    functionCreateInfo.pName = pShaderName;
-
-    if ((result = dxvkDevice->vkd()->vkCreateCuFunctionNVX(vkDevice, &functionCreateInfo, nullptr, &cuFunction))) {
-      dxvkDevice->vkd()->vkDestroyCuModuleNVX(vkDevice, cuModule, nullptr);
-      Logger::warn(str::format("CreateCubinComputeShaderWithNameNVX() - failure to create function - result=", result));
-      return false;
-    }
-
-    *phShader = ref(new CubinShaderWrapper(dxvkDevice,
-      cuModule, cuFunction, { blockX, blockY, blockZ }));
-    return true;
-  }
-
-
-  bool STDMETHODCALLTYPE D3D11DeviceExt::GetResourceHandleGPUVirtualAddressAndSizeNVX(void* hObject, uint64_t* gpuVAStart, uint64_t* gpuVASize) {
-    // The hObject 'opaque driver handle' is really just a straight cast
-    // of the corresponding ID3D11Resource* in dxvk/dxvknvapi
-    ID3D11Resource* pResource = static_cast<ID3D11Resource*>(hObject);
-
-    D3D11_COMMON_RESOURCE_DESC resourceDesc;
-    if (FAILED(GetCommonResourceDesc(pResource, &resourceDesc))) {
-      Logger::warn("GetResourceHandleGPUVirtualAddressAndSize() - GetCommonResourceDesc() failed");
-      return false;
-    }
-
-    switch (resourceDesc.Dim) {
-    case D3D11_RESOURCE_DIMENSION_BUFFER:
-    case D3D11_RESOURCE_DIMENSION_TEXTURE2D:
-      // okay - we can deal with those two dimensions
-      break;
-    case D3D11_RESOURCE_DIMENSION_TEXTURE1D:
-    case D3D11_RESOURCE_DIMENSION_TEXTURE3D:
-    case D3D11_RESOURCE_DIMENSION_UNKNOWN:
-    default:
-      Logger::warn(str::format("GetResourceHandleGPUVirtualAddressAndSize(?) - failure - unsupported dimension: ", resourceDesc.Dim));
-      return false;
-    }
-
-    Rc<DxvkDevice> dxvkDevice = m_device->GetDXVKDevice();
-    VkDevice vkDevice = dxvkDevice->handle();
-
-    if (resourceDesc.Dim == D3D11_RESOURCE_DIMENSION_TEXTURE2D) {
-      D3D11CommonTexture *texture = GetCommonTexture(pResource);
-      Rc<DxvkImage> dxvkImage = texture->GetImage();
-      if (0 == (dxvkImage->info().usage & (VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_SAMPLED_BIT))) {
-        Logger::warn(str::format("GetResourceHandleGPUVirtualAddressAndSize(res=", pResource,") image info missing required usage bit(s); can't be used for vkGetImageViewHandleNVX - failure"));
-        return false;
-      }
-
-      // The d3d11 nvapi provides us a texture but vulkan only lets us get the GPU address from an imageview.  So, make a private imageview and get the address from that...
-
-      D3D11_SHADER_RESOURCE_VIEW_DESC resourceViewDesc;
-
-      const D3D11_COMMON_TEXTURE_DESC *texDesc = texture->Desc();
-      if (texDesc->ArraySize != 1) {
-        Logger::debug(str::format("GetResourceHandleGPUVirtualAddressAndSize(?) - unexpected array size: ", texDesc->ArraySize));
-      }
-      resourceViewDesc.Format = texDesc->Format;
-      resourceViewDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
-      resourceViewDesc.Texture2D.MostDetailedMip = 0;
-      resourceViewDesc.Texture2D.MipLevels = texDesc->MipLevels;
-
-      Com<ID3D11ShaderResourceView> pNewSRV;
-      HRESULT hr = m_device->CreateShaderResourceView(pResource, &resourceViewDesc, &pNewSRV);
-      if (FAILED(hr)) {
-        Logger::warn("GetResourceHandleGPUVirtualAddressAndSize() - private CreateShaderResourceView() failed");
-        return false;
-      }
-
-      Rc<DxvkImageView> dxvkImageView = static_cast<D3D11ShaderResourceView*>(pNewSRV.ptr())->GetImageView();
-      VkImageView vkImageView = dxvkImageView->handle();
-
-      VkImageViewAddressPropertiesNVX imageViewAddressProperties = {VK_STRUCTURE_TYPE_IMAGE_VIEW_ADDRESS_PROPERTIES_NVX};
-
-      VkResult res = dxvkDevice->vkd()->vkGetImageViewAddressNVX(vkDevice, vkImageView, &imageViewAddressProperties);
-      if (res != VK_SUCCESS) {
-        Logger::warn(str::format("GetResourceHandleGPUVirtualAddressAndSize(): vkGetImageViewAddressNVX() result is failure: ", res));
-        return false;
-      }
-
-      *gpuVAStart = imageViewAddressProperties.deviceAddress;
-      *gpuVASize = imageViewAddressProperties.size;
-    }
-    else if (resourceDesc.Dim == D3D11_RESOURCE_DIMENSION_BUFFER) {
-      D3D11Buffer *buffer = GetCommonBuffer(pResource);
-      const DxvkBufferSliceHandle bufSliceHandle = buffer->GetBuffer()->getSliceHandle();
-      VkBuffer vkBuffer = bufSliceHandle.handle;
-
-      VkBufferDeviceAddressInfoKHR bdaInfo = { VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO_KHR };
-      bdaInfo.buffer = vkBuffer;
-      VkDeviceAddress bufAddr = dxvkDevice->vkd()->vkGetBufferDeviceAddressKHR(vkDevice, &bdaInfo);
-      *gpuVAStart = uint64_t(bufAddr) + bufSliceHandle.offset;
-      *gpuVASize = bufSliceHandle.length;
-    }
-
-    if (!*gpuVAStart)
-        Logger::warn("GetResourceHandleGPUVirtualAddressAndSize() addr==0 - unexpected"); // ... but not explicitly a failure; continue
-
-    return true;
-  }
-
-
-  bool STDMETHODCALLTYPE D3D11DeviceExt::CreateUnorderedAccessViewAndGetDriverHandleNVX(ID3D11Resource* pResource, const D3D11_UNORDERED_ACCESS_VIEW_DESC*  pDesc, ID3D11UnorderedAccessView** ppUAV, uint32_t* pDriverHandle) {
-    D3D11_COMMON_RESOURCE_DESC resourceDesc;
-    if (!SUCCEEDED(GetCommonResourceDesc(pResource, &resourceDesc))) {
-      Logger::warn("CreateUnorderedAccessViewAndGetDriverHandleNVX() - GetCommonResourceDesc() failed");
-      return false;
-    }
-    if (resourceDesc.Dim != D3D11_RESOURCE_DIMENSION_TEXTURE2D) {
-      Logger::warn(str::format("CreateUnorderedAccessViewAndGetDriverHandleNVX() - failure - unsupported dimension: ", resourceDesc.Dim));
-      return false;
-    }
-
-    auto texture = GetCommonTexture(pResource);
-    Rc<DxvkImage> dxvkImage = texture->GetImage();
-    if (0 == (dxvkImage->info().usage & (VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_SAMPLED_BIT))) {
-      Logger::warn(str::format("CreateUnorderedAccessViewAndGetDriverHandleNVX(res=", pResource, ") image info missing required usage bit(s); can't be used for vkGetImageViewHandleNVX - failure"));
-      return false;
-    }
-
-    if (!SUCCEEDED(m_device->CreateUnorderedAccessView(pResource, pDesc, ppUAV))) {
-      return false;
-    }
-
-    D3D11UnorderedAccessView *pUAV = static_cast<D3D11UnorderedAccessView *>(*ppUAV);
-    Rc<DxvkDevice> dxvkDevice = m_device->GetDXVKDevice();
-    VkDevice vkDevice = dxvkDevice->handle();
-
-    VkImageViewHandleInfoNVX imageViewHandleInfo = {VK_STRUCTURE_TYPE_IMAGE_VIEW_HANDLE_INFO_NVX};
-    Rc<DxvkImageView> dxvkImageView = pUAV->GetImageView();
-    VkImageView vkImageView = dxvkImageView->handle();
-
-    imageViewHandleInfo.imageView = vkImageView;
-    imageViewHandleInfo.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
-
-    *pDriverHandle = dxvkDevice->vkd()->vkGetImageViewHandleNVX(vkDevice, &imageViewHandleInfo);
-
-    if (!*pDriverHandle) {
-      Logger::warn("CreateUnorderedAccessViewAndGetDriverHandleNVX() handle==0 - failure");
-      pUAV->Release();
-      return false;
-    }
-
-    return true;
-  }
-
-
-  bool STDMETHODCALLTYPE D3D11DeviceExt::CreateShaderResourceViewAndGetDriverHandleNVX(ID3D11Resource* pResource, const D3D11_SHADER_RESOURCE_VIEW_DESC*  pDesc, ID3D11ShaderResourceView** ppSRV, uint32_t* pDriverHandle) {
-    D3D11_COMMON_RESOURCE_DESC resourceDesc;
-    if (!SUCCEEDED(GetCommonResourceDesc(pResource, &resourceDesc))) {
-      Logger::warn("CreateShaderResourceViewAndGetDriverHandleNVX() - GetCommonResourceDesc() failed");
-      return false;
-    }
-    if (resourceDesc.Dim != D3D11_RESOURCE_DIMENSION_TEXTURE2D) {
-      Logger::warn(str::format("CreateShaderResourceViewAndGetDriverHandleNVX() - failure - unsupported dimension: ", resourceDesc.Dim));
-      return false;
-    }
-
-    auto texture = GetCommonTexture(pResource);
-    Rc<DxvkImage> dxvkImage = texture->GetImage();
-    if (0 == (dxvkImage->info().usage & (VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_SAMPLED_BIT))) {
-      Logger::warn(str::format("CreateShaderResourceViewAndGetDriverHandleNVX(res=", pResource, ") image info missing required usage bit(s); can't be used for vkGetImageViewHandleNVX - failure"));
-      return false;
-    }
-
-    if (!SUCCEEDED(m_device->CreateShaderResourceView(pResource, pDesc, ppSRV))) {
-      return false;
-    }
-
-    D3D11ShaderResourceView* pSRV = static_cast<D3D11ShaderResourceView*>(*ppSRV);
-    Rc<DxvkDevice> dxvkDevice = m_device->GetDXVKDevice();
-    VkDevice vkDevice = dxvkDevice->handle();
-
-    VkImageViewHandleInfoNVX imageViewHandleInfo = {VK_STRUCTURE_TYPE_IMAGE_VIEW_HANDLE_INFO_NVX};
-    Rc<DxvkImageView> dxvkImageView = pSRV->GetImageView();
-    VkImageView vkImageView = dxvkImageView->handle();
-
-    imageViewHandleInfo.imageView = vkImageView;
-    imageViewHandleInfo.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
-
-    *pDriverHandle = dxvkDevice->vkd()->vkGetImageViewHandleNVX(vkDevice, &imageViewHandleInfo);
-
-    if (!*pDriverHandle) {
-      Logger::warn("CreateShaderResourceViewAndGetDriverHandleNVX() handle==0 - failure");
-      pSRV->Release();
-      return false;
-    }
-
-    // will need to look-up resource from uint32 handle later
-    AddSrvAndHandleNVX(*ppSRV, *pDriverHandle);
-    return true;
-  }
-
-
-  bool STDMETHODCALLTYPE D3D11DeviceExt::CreateSamplerStateAndGetDriverHandleNVX(const D3D11_SAMPLER_DESC* pSamplerDesc, ID3D11SamplerState** ppSamplerState, uint32_t* pDriverHandle) {
-    if (!SUCCEEDED(m_device->CreateSamplerState(pSamplerDesc, ppSamplerState))) {
-      return false;
-    }
-
-    // for our purposes the actual value doesn't matter, only its uniqueness
-    static std::atomic<ULONG> s_seqNum = 0;
-    *pDriverHandle = ++s_seqNum;
-
-    // will need to look-up sampler from uint32 handle later
-    AddSamplerAndHandleNVX(*ppSamplerState, *pDriverHandle);
-    return true;
-  }
-
-
-  void D3D11DeviceExt::AddSamplerAndHandleNVX(ID3D11SamplerState* pSampler, uint32_t Handle) {
-    std::lock_guard lock(m_mapLock);
-    m_samplerHandleToPtr[Handle] = pSampler;
-  }
-
-
-  ID3D11SamplerState* D3D11DeviceExt::HandleToSamplerNVX(uint32_t Handle) {
-    std::lock_guard lock(m_mapLock);
-    auto got = m_samplerHandleToPtr.find(Handle);
-
-    if (got == m_samplerHandleToPtr.end())
-      return nullptr;
-
-    return static_cast<ID3D11SamplerState*>(got->second);
-  }
-
-
-  void D3D11DeviceExt::AddSrvAndHandleNVX(ID3D11ShaderResourceView* pSrv, uint32_t Handle) {
-    std::lock_guard lock(m_mapLock);
-    m_srvHandleToPtr[Handle] = pSrv;
-  }
-
-
-  ID3D11ShaderResourceView* D3D11DeviceExt::HandleToSrvNVX(uint32_t Handle) {
-    std::lock_guard lock(m_mapLock);
-    auto got = m_srvHandleToPtr.find(Handle);
-
-    if (got == m_srvHandleToPtr.end())
-      return nullptr;
-
-    return static_cast<ID3D11ShaderResourceView*>(got->second);
-  }
-
-
-
-  
-  
-  D3D11VideoDevice::D3D11VideoDevice(
-          D3D11DXGIDevice*        pContainer,
-          D3D11Device*            pDevice)
-  : m_container(pContainer), m_device(pDevice) {
-
-  }
-
-
-  D3D11VideoDevice::~D3D11VideoDevice() {
-
-  }
-
-
-  ULONG STDMETHODCALLTYPE D3D11VideoDevice::AddRef() {
-    return m_container->AddRef();
-  }
-
-
-  ULONG STDMETHODCALLTYPE D3D11VideoDevice::Release() {
-    return m_container->Release();
-  }
-
-
-  HRESULT STDMETHODCALLTYPE D3D11VideoDevice::QueryInterface(
-          REFIID                  riid,
-          void**                  ppvObject) {
-    return m_container->QueryInterface(riid, ppvObject);
-  }
-
-
-  HRESULT STDMETHODCALLTYPE D3D11VideoDevice::CreateVideoDecoder(
-    const D3D11_VIDEO_DECODER_DESC*                     pVideoDesc,
-    const D3D11_VIDEO_DECODER_CONFIG*                   pConfig,
-          ID3D11VideoDecoder**                          ppDecoder) {
-    Logger::err("D3D11VideoDevice::CreateVideoDecoder: Stub");
-    return E_NOTIMPL;
-  }
-
-
-  HRESULT STDMETHODCALLTYPE D3D11VideoDevice::CreateVideoProcessor(
-          ID3D11VideoProcessorEnumerator*               pEnum,
-          UINT                                          RateConversionIndex,
-          ID3D11VideoProcessor**                        ppVideoProcessor) {
-    try {
-      auto enumerator = static_cast<D3D11VideoProcessorEnumerator*>(pEnum);
-      *ppVideoProcessor = ref(new D3D11VideoProcessor(m_device, enumerator, RateConversionIndex));
-      return S_OK;
-    } catch (const DxvkError& e) {
-      Logger::err(e.message());
-      return E_FAIL;
-    }
-  }
-
-
-  HRESULT STDMETHODCALLTYPE D3D11VideoDevice::CreateAuthenticatedChannel(
-          D3D11_AUTHENTICATED_CHANNEL_TYPE              ChannelType,
-          ID3D11AuthenticatedChannel**                  ppAuthenticatedChannel) {
-    Logger::err("D3D11VideoDevice::CreateAuthenticatedChannel: Stub");
-    return E_NOTIMPL;
-  }
-
-
-  HRESULT STDMETHODCALLTYPE D3D11VideoDevice::CreateCryptoSession(
-    const GUID*                                         pCryptoType,
-    const GUID*                                         pDecoderProfile,
-    const GUID*                                         pKeyExchangeType,
-          ID3D11CryptoSession**                         ppCryptoSession) {
-    Logger::err("D3D11VideoDevice::CreateCryptoSession: Stub");
-    return E_NOTIMPL;
-  }
-
-
-  HRESULT STDMETHODCALLTYPE D3D11VideoDevice::CreateVideoDecoderOutputView(
-          ID3D11Resource*                               pResource,
-    const D3D11_VIDEO_DECODER_OUTPUT_VIEW_DESC*         pDesc,
-          ID3D11VideoDecoderOutputView**                ppVDOVView) {
-    Logger::err("D3D11VideoDevice::CreateVideoDecoderOutputView: Stub");
-    return E_NOTIMPL;
-  }
-
-
-  HRESULT STDMETHODCALLTYPE D3D11VideoDevice::CreateVideoProcessorInputView(
-          ID3D11Resource*                               pResource,
-          ID3D11VideoProcessorEnumerator*               pEnum,
-    const D3D11_VIDEO_PROCESSOR_INPUT_VIEW_DESC*        pDesc,
-          ID3D11VideoProcessorInputView**               ppVPIView) {
-    try {
-      *ppVPIView = ref(new D3D11VideoProcessorInputView(m_device, pResource, *pDesc));
-      return S_OK;
-    } catch (const DxvkError& e) {
-      Logger::err(e.message());
-      return E_FAIL;
-    }
-  }
-
-
-  HRESULT STDMETHODCALLTYPE D3D11VideoDevice::CreateVideoProcessorOutputView(
-          ID3D11Resource*                               pResource,
-          ID3D11VideoProcessorEnumerator*               pEnum,
-    const D3D11_VIDEO_PROCESSOR_OUTPUT_VIEW_DESC*       pDesc,
-          ID3D11VideoProcessorOutputView**              ppVPOView) {
-    try {
-      *ppVPOView = ref(new D3D11VideoProcessorOutputView(m_device, pResource, *pDesc));
-      return S_OK;
-    } catch (const DxvkError& e) {
-      Logger::err(e.message());
-      return E_FAIL;
-    }
-  }
-
-
-  HRESULT STDMETHODCALLTYPE D3D11VideoDevice::CreateVideoProcessorEnumerator(
-    const D3D11_VIDEO_PROCESSOR_CONTENT_DESC*           pDesc,
-          ID3D11VideoProcessorEnumerator**              ppEnum)  {
-    try {
-      *ppEnum = ref(new D3D11VideoProcessorEnumerator(m_device, *pDesc));
-      return S_OK;
-    } catch (const DxvkError& e) {
-      Logger::err(e.message());
-      return E_FAIL;
-    }
-  }
-
-
-  UINT STDMETHODCALLTYPE D3D11VideoDevice::GetVideoDecoderProfileCount() {
-    Logger::err("D3D11VideoDevice::GetVideoDecoderProfileCount: Stub");
-    return 0;
-  }
-
-
-  HRESULT STDMETHODCALLTYPE D3D11VideoDevice::GetVideoDecoderProfile(
-          UINT                                          Index,
-          GUID*                                         pDecoderProfile) {
-    Logger::err("D3D11VideoDevice::GetVideoDecoderProfile: Stub");
-    return E_NOTIMPL;
-  }
-
-
-  HRESULT STDMETHODCALLTYPE D3D11VideoDevice::CheckVideoDecoderFormat(
-    const GUID*                                         pDecoderProfile,
-          DXGI_FORMAT                                   Format,
-          BOOL*                                         pSupported) {
-    Logger::err("D3D11VideoDevice::CheckVideoDecoderFormat: Stub");
-    return E_NOTIMPL;
-  }
-
-
-  HRESULT STDMETHODCALLTYPE D3D11VideoDevice::GetVideoDecoderConfigCount(
-    const D3D11_VIDEO_DECODER_DESC*                     pDesc,
-          UINT*                                         pCount) {
-    Logger::err("D3D11VideoDevice::GetVideoDecoderConfigCount: Stub");
-    return E_NOTIMPL;
-  }
-
-
-  HRESULT STDMETHODCALLTYPE D3D11VideoDevice::GetVideoDecoderConfig(
-    const D3D11_VIDEO_DECODER_DESC*                     pDesc,
-          UINT                                          Index,
-          D3D11_VIDEO_DECODER_CONFIG*                   pConfig) {
-    Logger::err("D3D11VideoDevice::GetVideoDecoderConfig: Stub");
-    return E_NOTIMPL;
-  }
-
-
-  HRESULT STDMETHODCALLTYPE D3D11VideoDevice::GetContentProtectionCaps(
-    const GUID*                                         pCryptoType,
-    const GUID*                                         pDecoderProfile,
-          D3D11_VIDEO_CONTENT_PROTECTION_CAPS*          pCaps) {
-    Logger::err("D3D11VideoDevice::GetContentProtectionCaps: Stub");
-    return E_NOTIMPL;
-  }
-
-
-  HRESULT STDMETHODCALLTYPE D3D11VideoDevice::CheckCryptoKeyExchange(
-    const GUID*                                         pCryptoType,
-    const GUID*                                         pDecoderProfile,
-          UINT                                          Index,
-          GUID*                                         pKeyExchangeType) {
-    Logger::err("D3D11VideoDevice::CheckCryptoKeyExchange: Stub");
-    return E_NOTIMPL;
-  }
-
-
-  HRESULT STDMETHODCALLTYPE D3D11VideoDevice::SetPrivateData(
-          REFGUID                                       Name,
-          UINT                                          DataSize,
-    const void*                                         pData) {
-    return m_container->SetPrivateData(Name, DataSize, pData);
-  }
-
-
-  HRESULT STDMETHODCALLTYPE D3D11VideoDevice::SetPrivateDataInterface(
-          REFGUID                                       Name,
-    const IUnknown*                                     pData) {
-    return m_container->SetPrivateDataInterface(Name, pData);
-  }
-
-
 
 
   WineDXGISwapChainFactory::WineDXGISwapChainFactory(
@@ -3088,9 +2503,6 @@ namespace dxvk {
     m_dxvkAdapter   (pDxvkAdapter),
     m_dxvkDevice    (CreateDevice(FeatureLevel)),
     m_d3d11Device   (this, FeatureLevel, FeatureFlags),
-    m_d3d11DeviceExt(this, &m_d3d11Device),
-    m_d3d11Interop  (this, &m_d3d11Device),
-    m_d3d11Video    (this, &m_d3d11Device),
     m_metaDevice    (this),
     m_wineFactory   (this, &m_d3d11Device) {
 
@@ -3119,18 +2531,6 @@ namespace dxvk {
       return S_OK;
     }
     
-    if (riid == __uuidof(IDXGIVkInteropDevice)
-     || riid == __uuidof(IDXGIVkInteropDevice1)) {
-      *ppvObject = ref(&m_d3d11Interop);
-      return S_OK;
-    }
-    
-    if (riid == __uuidof(ID3D10Device)
-     || riid == __uuidof(ID3D10Device1)) {
-      *ppvObject = ref(m_d3d11Device.GetD3D10Interface());
-      return S_OK;
-    }
-    
     if (riid == __uuidof(ID3D11Device)
      || riid == __uuidof(ID3D11Device1)
      || riid == __uuidof(ID3D11Device2)
@@ -3138,12 +2538,6 @@ namespace dxvk {
      || riid == __uuidof(ID3D11Device4)
      || riid == __uuidof(ID3D11Device5)) {
       *ppvObject = ref(&m_d3d11Device);
-      return S_OK;
-    }
-    
-    if (riid == __uuidof(ID3D11VkExtDevice)
-     || riid == __uuidof(ID3D11VkExtDevice1)) {
-      *ppvObject = ref(&m_d3d11DeviceExt);
       return S_OK;
     }
     
@@ -3155,17 +2549,6 @@ namespace dxvk {
     if (riid == __uuidof(IWineDXGISwapChainFactory)) {
       *ppvObject = ref(&m_wineFactory);
       return S_OK;
-    }
-
-    if (riid == __uuidof(ID3D11VideoDevice)) {
-      *ppvObject = ref(&m_d3d11Video);
-      return S_OK;
-    }
-
-    if (riid == __uuidof(ID3D10Multithread)) {
-      Com<ID3D11DeviceContext> context;
-      m_d3d11Device.GetImmediateContext(&context);
-      return context->QueryInterface(riid, ppvObject);
     }
 
     if (riid == __uuidof(ID3D11Debug))

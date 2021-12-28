@@ -7,8 +7,6 @@
 #include "dxgi_monitor.h"
 #include "dxgi_object.h"
 
-#include "../d3d11/d3d11_interfaces.h"
-
 #include "../spirv/spirv_module.h"
 
 #include "../util/util_time.h"

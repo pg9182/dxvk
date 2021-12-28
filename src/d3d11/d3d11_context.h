@@ -4,11 +4,8 @@
 #include "../dxvk/dxvk_cs.h"
 #include "../dxvk/dxvk_device.h"
 
-#include "../d3d10/d3d10_multithread.h"
-
 #include "d3d11_annotation.h"
 #include "d3d11_cmd.h"
-#include "d3d11_context_ext.h"
 #include "d3d11_context_state.h"
 #include "d3d11_device_child.h"
 #include "d3d11_texture.h"
@@ -18,7 +15,6 @@ namespace dxvk {
   class D3D11Device;
   
   class D3D11DeviceContext : public D3D11DeviceChild<ID3D11DeviceContext4> {
-    friend class D3D11DeviceContextExt;
     // Needed in order to call EmitCs for pushing markers
     friend class D3D11UserDefinedAnnotation;
   public:
@@ -694,21 +690,9 @@ namespace dxvk {
     void STDMETHODCALLTYPE SetHardwareProtectionState(
             BOOL                              HwProtectionEnable);
 
-    void STDMETHODCALLTYPE TransitionSurfaceLayout(
-            IDXGIVkInteropSurface*    pSurface,
-      const VkImageSubresourceRange*  pSubresources,
-            VkImageLayout             OldLayout,
-            VkImageLayout             NewLayout);
-
-    D3D10DeviceLock LockContext() {
-      return m_multithread.AcquireLock();
-    }
-
   protected:
     
-    D3D11DeviceContextExt       m_contextExt;
     D3D11UserDefinedAnnotation  m_annotation;
-    D3D10Multithread            m_multithread;
     
     Rc<DxvkDevice>              m_device;
     Rc<DxvkDataBuffer>          m_updateBuffer;

@@ -30,7 +30,6 @@ namespace dxvk {
     
     CreateBackBuffer();
     CreateBlitter();
-    CreateHud();
   }
 
 
@@ -299,9 +298,6 @@ namespace dxvk {
       m_blitter->presentImage(m_context.ptr(),
         m_imageViews.at(imageIndex), VkRect2D(),
         m_swapImageView, VkRect2D());
-
-      if (m_hud != nullptr)
-        m_hud->render(m_context, info.format, info.imageExtent);
       
       if (i + 1 >= SyncInterval)
         m_context->signal(m_frameLatencySignal, m_frameId);
@@ -318,8 +314,6 @@ namespace dxvk {
           D3D11ImmediateContext*  pContext,
     const vk::PresenterSync&      Sync,
           uint32_t                FrameId) {
-    auto lock = pContext->LockContext();
-
     // Present from CS thread so that we don't
     // have to synchronize with it first.
     m_presentStatus.result = VK_NOT_READY;
@@ -327,14 +321,10 @@ namespace dxvk {
     pContext->EmitCs([this,
       cFrameId     = FrameId,
       cSync        = Sync,
-      cHud         = m_hud,
       cCommandList = m_context->endRecording()
     ] (DxvkContext* ctx) {
       m_device->submitCommandList(cCommandList,
         cSync.acquire, cSync.present);
-
-      if (cHud != nullptr && !cFrameId)
-        cHud->update();
 
       m_device->presentImage(m_presenter, &m_presentStatus);
     });
@@ -544,14 +534,6 @@ namespace dxvk {
 
   void D3D11SwapChain::CreateBlitter() {
     m_blitter = new DxvkSwapchainBlitter(m_device);    
-  }
-
-
-  void D3D11SwapChain::CreateHud() {
-    m_hud = hud::Hud::createHud(m_device);
-
-    if (m_hud != nullptr)
-      m_hud->addItem<hud::HudClientApiItem>("api", 1, GetApiName());
   }
 
 

@@ -10,15 +10,10 @@
 
 #include "../dxvk/dxvk_cs.h"
 
-#include "../d3d10/d3d10_device.h"
-
 #include "../util/com/com_private_data.h"
 
 #include "d3d11_cmdlist.h"
-#include "d3d11_cuda.h"
 #include "d3d11_initializer.h"
-#include "d3d11_interfaces.h"
-#include "d3d11_interop.h"
 #include "d3d11_options.h"
 #include "d3d11_shader.h"
 #include "d3d11_state.h"
@@ -416,10 +411,6 @@ namespace dxvk {
     const D3D11Options* GetOptions() const {
       return &m_d3d11Options;
     }
-
-    D3D10Device* GetD3D10Interface() const {
-      return m_d3d10Device;
-    }
     
     static bool CheckFeatureLevelSupport(
       const Rc<DxvkInstance>& instance,
@@ -447,7 +438,6 @@ namespace dxvk {
     DxvkCsChunkPool                 m_csChunkPool;
     
     D3D11Initializer*               m_initializer = nullptr;
-    D3D10Device*                    m_d3d10Device = nullptr;
     Com<D3D11ImmediateContext, false> m_context;
 
     D3D11StateObjectSet<D3D11BlendState>        m_bsStateObjects;
@@ -489,199 +479,6 @@ namespace dxvk {
     static D3D_FEATURE_LEVEL GetMaxFeatureLevel(
       const Rc<DxvkInstance>&           pInstance);
     
-  };
-  
-  
-  /**
-   * \brief Extended D3D11 device
-   */
-  class D3D11DeviceExt : public ID3D11VkExtDevice1 {
-    
-  public:
-    
-    D3D11DeviceExt(
-            D3D11DXGIDevice*        pContainer,
-            D3D11Device*            pDevice);
-    
-    ULONG STDMETHODCALLTYPE AddRef();
-    
-    ULONG STDMETHODCALLTYPE Release();
-    
-    HRESULT STDMETHODCALLTYPE QueryInterface(
-            REFIID                  riid,
-            void**                  ppvObject);
-    
-    BOOL STDMETHODCALLTYPE GetExtensionSupport(
-            D3D11_VK_EXTENSION      Extension);
-    
-    bool STDMETHODCALLTYPE GetCudaTextureObjectNVX(
-            uint32_t                srvDriverHandle,
-            uint32_t                samplerDriverHandle,
-            uint32_t*               pCudaTextureHandle);
-
-    bool STDMETHODCALLTYPE CreateCubinComputeShaderWithNameNVX(
-            const void*             pCubin,
-            uint32_t                size,
-            uint32_t                blockX,
-            uint32_t                blockY,
-            uint32_t                blockZ,
-            const char*             pShaderName,
-            IUnknown**              phShader);
-
-    bool STDMETHODCALLTYPE GetResourceHandleGPUVirtualAddressAndSizeNVX(
-            void*                   hObject,
-            uint64_t*               gpuVAStart,
-            uint64_t*               gpuVASize);
-
-     bool STDMETHODCALLTYPE CreateUnorderedAccessViewAndGetDriverHandleNVX(
-            ID3D11Resource*                         pResource,
-            const D3D11_UNORDERED_ACCESS_VIEW_DESC* pDesc,
-            ID3D11UnorderedAccessView**             ppUAV,
-            uint32_t*                               pDriverHandle);
-
-     bool STDMETHODCALLTYPE CreateShaderResourceViewAndGetDriverHandleNVX(
-            ID3D11Resource*                        pResource,
-            const D3D11_SHADER_RESOURCE_VIEW_DESC* pDesc,
-            ID3D11ShaderResourceView**             ppSRV,
-            uint32_t*                              pDriverHandle);
-
-     bool STDMETHODCALLTYPE CreateSamplerStateAndGetDriverHandleNVX(
-            const D3D11_SAMPLER_DESC* pSamplerDesc,
-            ID3D11SamplerState**      ppSamplerState,
-            uint32_t*                 pDriverHandle);
-    
-  private:
-    
-    D3D11DXGIDevice* m_container;
-    D3D11Device*     m_device;
-    
-    void AddSamplerAndHandleNVX(
-            ID3D11SamplerState*       pSampler,
-            uint32_t                  Handle);
-
-    ID3D11SamplerState* HandleToSamplerNVX(
-            uint32_t                  Handle);
-
-    void AddSrvAndHandleNVX(
-            ID3D11ShaderResourceView* pSrv,
-            uint32_t                  Handle);
-
-    ID3D11ShaderResourceView* HandleToSrvNVX(
-            uint32_t                  Handle);
-    
-    dxvk::mutex m_mapLock;
-    std::unordered_map<uint32_t, ID3D11SamplerState*> m_samplerHandleToPtr;
-    std::unordered_map<uint32_t, ID3D11ShaderResourceView*> m_srvHandleToPtr;
-  };
-
-
-  /**
-   * \brief D3D11 video device
-   */
-  class D3D11VideoDevice : public ID3D11VideoDevice {
-
-  public:
-
-    D3D11VideoDevice(
-            D3D11DXGIDevice*        pContainer,
-            D3D11Device*            pDevice);
-
-    ~D3D11VideoDevice();
-
-    ULONG STDMETHODCALLTYPE AddRef();
-
-    ULONG STDMETHODCALLTYPE Release();
-
-    HRESULT STDMETHODCALLTYPE QueryInterface(
-            REFIID                  riid,
-            void**                  ppvObject);
-
-    HRESULT STDMETHODCALLTYPE CreateVideoDecoder(
-      const D3D11_VIDEO_DECODER_DESC*                     pVideoDesc,
-      const D3D11_VIDEO_DECODER_CONFIG*                   pConfig,
-            ID3D11VideoDecoder**                          ppDecoder);
-
-    HRESULT STDMETHODCALLTYPE CreateVideoProcessor(
-            ID3D11VideoProcessorEnumerator*               pEnum,
-            UINT                                          RateConversionIndex,
-            ID3D11VideoProcessor**                        ppVideoProcessor);
-
-    HRESULT STDMETHODCALLTYPE CreateAuthenticatedChannel(
-            D3D11_AUTHENTICATED_CHANNEL_TYPE              ChannelType,
-            ID3D11AuthenticatedChannel**                  ppAuthenticatedChannel);
-
-    HRESULT STDMETHODCALLTYPE CreateCryptoSession(
-      const GUID*                                         pCryptoType,
-      const GUID*                                         pDecoderProfile,
-      const GUID*                                         pKeyExchangeType,
-            ID3D11CryptoSession**                         ppCryptoSession);
-
-    HRESULT STDMETHODCALLTYPE CreateVideoDecoderOutputView(
-            ID3D11Resource*                               pResource,
-      const D3D11_VIDEO_DECODER_OUTPUT_VIEW_DESC*         pDesc,
-            ID3D11VideoDecoderOutputView**                ppVDOVView);
-
-    HRESULT STDMETHODCALLTYPE CreateVideoProcessorInputView(
-            ID3D11Resource*                               pResource,
-            ID3D11VideoProcessorEnumerator*               pEnum,
-      const D3D11_VIDEO_PROCESSOR_INPUT_VIEW_DESC*        pDesc,
-            ID3D11VideoProcessorInputView**               ppVPIView);
-
-    HRESULT STDMETHODCALLTYPE CreateVideoProcessorOutputView(
-            ID3D11Resource*                               pResource,
-            ID3D11VideoProcessorEnumerator*               pEnum,
-      const D3D11_VIDEO_PROCESSOR_OUTPUT_VIEW_DESC*       pDesc,
-            ID3D11VideoProcessorOutputView**              ppVPOView);
-
-    HRESULT STDMETHODCALLTYPE CreateVideoProcessorEnumerator(
-      const D3D11_VIDEO_PROCESSOR_CONTENT_DESC*           pDesc,
-            ID3D11VideoProcessorEnumerator**              ppEnum);
-
-    UINT STDMETHODCALLTYPE GetVideoDecoderProfileCount();
-
-    HRESULT STDMETHODCALLTYPE GetVideoDecoderProfile(
-            UINT                                          Index,
-            GUID*                                         pDecoderProfile);
-
-    HRESULT STDMETHODCALLTYPE CheckVideoDecoderFormat(
-      const GUID*                                         pDecoderProfile,
-            DXGI_FORMAT                                   Format,
-            BOOL*                                         pSupported);
-
-    HRESULT STDMETHODCALLTYPE GetVideoDecoderConfigCount(
-      const D3D11_VIDEO_DECODER_DESC*                     pDesc,
-            UINT*                                         pCount);
-
-    HRESULT STDMETHODCALLTYPE GetVideoDecoderConfig(
-      const D3D11_VIDEO_DECODER_DESC*                     pDesc,
-            UINT                                          Index,
-            D3D11_VIDEO_DECODER_CONFIG*                   pConfig);
-
-    HRESULT STDMETHODCALLTYPE GetContentProtectionCaps(
-      const GUID*                                         pCryptoType,
-      const GUID*                                         pDecoderProfile,
-            D3D11_VIDEO_CONTENT_PROTECTION_CAPS*          pCaps);
-
-    HRESULT STDMETHODCALLTYPE CheckCryptoKeyExchange(
-      const GUID*                                         pCryptoType,
-      const GUID*                                         pDecoderProfile,
-            UINT                                          Index,
-            GUID*                                         pKeyExchangeType);
-
-    HRESULT STDMETHODCALLTYPE SetPrivateData(
-            REFGUID                                       Name,
-            UINT                                          DataSize,
-      const void*                                         pData);
-
-    HRESULT STDMETHODCALLTYPE SetPrivateDataInterface(
-            REFGUID                                       Name,
-      const IUnknown*                                     pData);
-
-  private:
-
-    D3D11DXGIDevice* m_container;
-    D3D11Device*     m_device;
-
   };
 
 
@@ -841,9 +638,6 @@ namespace dxvk {
     Rc<DxvkDevice>      m_dxvkDevice;
 
     D3D11Device         m_d3d11Device;
-    D3D11DeviceExt      m_d3d11DeviceExt;
-    D3D11VkInterop      m_d3d11Interop;
-    D3D11VideoDevice    m_d3d11Video;
     DXGIDXVKDevice      m_metaDevice;
     
     WineDXGISwapChainFactory m_wineFactory;

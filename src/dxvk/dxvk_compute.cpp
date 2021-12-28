@@ -6,7 +6,6 @@
 #include "dxvk_device.h"
 #include "dxvk_pipemanager.h"
 #include "dxvk_spec_const.h"
-#include "dxvk_state_cache.h"
 
 namespace dxvk {
   
@@ -51,7 +50,6 @@ namespace dxvk {
     if (!instance)
       return VK_NULL_HANDLE;
 
-    this->writePipelineStateToCache(state);
     return instance->pipeline();
   }
 
@@ -144,19 +142,5 @@ namespace dxvk {
   void DxvkComputePipeline::destroyPipeline(VkPipeline pipeline) {
     m_vkd->vkDestroyPipeline(m_vkd->device(), pipeline, nullptr);
   }
-  
-  
-  void DxvkComputePipeline::writePipelineStateToCache(
-    const DxvkComputePipelineStateInfo& state) const {
-    if (m_pipeMgr->m_stateCache == nullptr)
-      return;
-    
-    DxvkStateCacheKey key;
 
-    if (m_shaders.cs != nullptr)
-      key.cs = m_shaders.cs->getShaderKey();
-
-    m_pipeMgr->m_stateCache->addComputePipeline(key, state);
-  }
-  
 }

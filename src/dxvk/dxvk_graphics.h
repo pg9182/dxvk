@@ -248,10 +248,6 @@ namespace dxvk {
     bool validatePipelineState(
       const DxvkGraphicsPipelineStateInfo& state) const;
     
-    void writePipelineStateToCache(
-      const DxvkGraphicsPipelineStateInfo& state,
-      const DxvkRenderPassFormat&          format) const;
-    
     void logPipelineState(
             LogLevel                       level,
       const DxvkGraphicsPipelineStateInfo& state) const;

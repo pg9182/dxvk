@@ -86,14 +86,6 @@ namespace dxvk {
     void logOptions() const;
 
     /**
-     * \brief Retrieves default options for an app
-     * 
-     * \param [in] appName Name of the application
-     * \returns Default options for the application
-     */
-    static Config getAppConfig(const std::string& appName);
-
-    /**
      * \brief Retrieves user configuration
      * 
      * Reads options from the configuration file,

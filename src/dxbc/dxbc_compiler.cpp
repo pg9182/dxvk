@@ -1538,11 +1538,6 @@ namespace dxvk {
     switch (ins.customDataType) {
       case DxbcCustomDataClass::ImmConstBuf:
         return emitDclImmediateConstantBuffer(ins);
-      
-      default:
-        Logger::warn(str::format(
-          "DxbcCompiler: Unsupported custom data block: ",
-          ins.customDataType));
     }
   }
   

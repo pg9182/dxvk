@@ -63,8 +63,6 @@ function build_arch {
         $opt_strip                                    \
         --bindir "x$1"                                \
         --libdir "x$1"                                \
-        -Denable_tests=false                          \
-        -Dbuild_id=$opt_buildid                       \
         "$DXVK_BUILD_DIR/build.$1"
 
   cd "$DXVK_BUILD_DIR/build.$1"
@@ -89,7 +87,6 @@ function package {
 }
 
 build_arch 64
-build_arch 32
 build_script
 
 if [ $opt_nopackage -eq 0 ]; then

@@ -1,11 +1,9 @@
 #pragma once
 
 #include "../dxvk/dxvk_device.h"
-
-#include "../d3d10/d3d10_texture.h"
+#include "../dxgi/dxgi_format.h"
 
 #include "d3d11_device_child.h"
-#include "d3d11_interfaces.h"
 #include "d3d11_resource.h"
 
 namespace dxvk {
@@ -430,46 +428,6 @@ namespace dxvk {
   };
   
   
-  /**
-   * \brief Common texture interop class
-   * 
-   * Provides access to the underlying Vulkan
-   * texture to external Vulkan libraries.
-   */
-  class D3D11VkInteropSurface : public IDXGIVkInteropSurface {
-    
-  public:
-    
-    D3D11VkInteropSurface(
-            ID3D11Resource*     pResource,
-            D3D11CommonTexture* pTexture);
-    
-    ~D3D11VkInteropSurface();
-    
-    ULONG STDMETHODCALLTYPE AddRef();
-    
-    ULONG STDMETHODCALLTYPE Release();
-    
-    HRESULT STDMETHODCALLTYPE QueryInterface(
-            REFIID                  riid,
-            void**                  ppvObject);
-    
-    HRESULT STDMETHODCALLTYPE GetDevice(
-            IDXGIVkInteropDevice**  ppDevice);
-    
-    HRESULT STDMETHODCALLTYPE GetVulkanImageInfo(
-            VkImage*              pHandle,
-            VkImageLayout*        pLayout,
-            VkImageCreateInfo*    pInfo);
-    
-  private:
-    
-    ID3D11Resource*     m_resource;
-    D3D11CommonTexture* m_texture;
-    
-  };
-  
-  
   ///////////////////////////////////////////
   //      D 3 D 1 1 T E X T U R E 1 D
   class D3D11Texture1D : public D3D11DeviceChild<ID3D11Texture1D> {
@@ -499,18 +457,12 @@ namespace dxvk {
     D3D11CommonTexture* GetCommonTexture() {
       return &m_texture;
     }
-
-    D3D10Texture1D* GetD3D10Iface() {
-      return &m_d3d10;
-    }
     
   private:
     
     D3D11CommonTexture    m_texture;
-    D3D11VkInteropSurface m_interop;
     D3D11DXGISurface      m_surface;
     D3D11DXGIResource     m_resource;
-    D3D10Texture1D        m_d3d10;
     
   };
   
@@ -553,18 +505,12 @@ namespace dxvk {
     D3D11CommonTexture* GetCommonTexture() {
       return &m_texture;
     }
-    
-    D3D10Texture2D* GetD3D10Iface() {
-      return &m_d3d10;
-    }
 
   private:
     
     D3D11CommonTexture    m_texture;
-    D3D11VkInteropSurface m_interop;
     D3D11DXGISurface      m_surface;
     D3D11DXGIResource     m_resource;
-    D3D10Texture2D        m_d3d10;
     
   };
   
@@ -601,17 +547,11 @@ namespace dxvk {
     D3D11CommonTexture* GetCommonTexture() {
       return &m_texture;
     }
-    
-    D3D10Texture3D* GetD3D10Iface() {
-      return &m_d3d10;
-    }
 
   private:
     
     D3D11CommonTexture    m_texture;
-    D3D11VkInteropSurface m_interop;
     D3D11DXGIResource     m_resource;
-    D3D10Texture3D        m_d3d10;
     
   };
   

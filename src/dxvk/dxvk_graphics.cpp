@@ -4,7 +4,6 @@
 #include "dxvk_graphics.h"
 #include "dxvk_pipemanager.h"
 #include "dxvk_spec_const.h"
-#include "dxvk_state_cache.h"
 
 namespace dxvk {
 
@@ -78,7 +77,6 @@ namespace dxvk {
     if (!instance)
       return VK_NULL_HANDLE;
 
-    this->writePipelineStateToCache(state, renderPass->format());
     return instance->pipeline();
   }
 
@@ -518,24 +516,7 @@ namespace dxvk {
     // No errors
     return true;
   }
-  
-  
-  void DxvkGraphicsPipeline::writePipelineStateToCache(
-    const DxvkGraphicsPipelineStateInfo& state,
-    const DxvkRenderPassFormat&          format) const {
-    if (m_pipeMgr->m_stateCache == nullptr)
-      return;
-    
-    DxvkStateCacheKey key;
-    if (m_shaders.vs  != nullptr) key.vs = m_shaders.vs->getShaderKey();
-    if (m_shaders.tcs != nullptr) key.tcs = m_shaders.tcs->getShaderKey();
-    if (m_shaders.tes != nullptr) key.tes = m_shaders.tes->getShaderKey();
-    if (m_shaders.gs  != nullptr) key.gs = m_shaders.gs->getShaderKey();
-    if (m_shaders.fs  != nullptr) key.fs = m_shaders.fs->getShaderKey();
 
-    m_pipeMgr->m_stateCache->addGraphicsPipeline(key, state, format);
-  }
-  
   
   void DxvkGraphicsPipeline::logPipelineState(
           LogLevel                       level,

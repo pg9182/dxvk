@@ -157,9 +157,6 @@ namespace dxvk {
     
     void destroyPipeline(
             VkPipeline                    pipeline);
-
-    void writePipelineStateToCache(
-      const DxvkComputePipelineStateInfo& state) const;
     
   };
   

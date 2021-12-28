@@ -2,10 +2,7 @@
 
 #include "../dxvk/dxvk_device.h"
 
-#include "../d3d10/d3d10_buffer.h"
-
 #include "d3d11_device_child.h"
-#include "d3d11_interfaces.h"
 #include "d3d11_resource.h"
 
 namespace dxvk {
@@ -115,10 +112,6 @@ namespace dxvk {
       return m_mapped;
     }
 
-    D3D10Buffer* GetD3D10Iface() {
-      return &m_d3d10;
-    }
-
     /**
      * \brief Normalizes buffer description
      * 
@@ -137,7 +130,6 @@ namespace dxvk {
     DxvkBufferSliceHandle       m_mapped;
 
     D3D11DXGIResource           m_resource;
-    D3D10Buffer                 m_d3d10;
 
     BOOL CheckFormatFeatureSupport(
             VkFormat              Format,

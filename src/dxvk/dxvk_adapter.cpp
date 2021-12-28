@@ -251,11 +251,6 @@ namespace dxvk {
         && (m_deviceFeatures.extVertexAttributeDivisor.vertexAttributeInstanceRateZeroDivisor
                 || !required.extVertexAttributeDivisor.vertexAttributeInstanceRateZeroDivisor);
   }
-  
-  
-  void DxvkAdapter::enableExtensions(const DxvkNameSet& extensions) {
-    m_extraExtensions.merge(extensions);
-  }
 
 
   Rc<DxvkDevice> DxvkAdapter::createDevice(
@@ -263,7 +258,7 @@ namespace dxvk {
           DxvkDeviceFeatures  enabledFeatures) {
     DxvkDeviceExtensions devExtensions;
 
-    std::array<DxvkExt*, 28> devExtensionList = {{
+    std::array<DxvkExt*, 26> devExtensionList = {{
       &devExtensions.amdMemoryOverallocationBehaviour,
       &devExtensions.amdShaderFragmentMask,
       &devExtensions.ext4444Formats,
@@ -290,25 +285,7 @@ namespace dxvk {
       &devExtensions.khrSamplerMirrorClampToEdge,
       &devExtensions.khrShaderFloatControls,
       &devExtensions.khrSwapchain,
-      &devExtensions.nvxBinaryImport,
-      &devExtensions.nvxImageViewHandle,
     }};
-
-    // Only enable Cuda interop extensions in 64-bit builds in
-    // order to avoid potential driver or address space issues.
-    // VK_KHR_buffer_device_address is expensive on some drivers.
-    bool enableCudaInterop = !env::is32BitHostPlatform() &&
-      m_deviceExtensions.supports(devExtensions.nvxBinaryImport.name()) &&
-      m_deviceExtensions.supports(devExtensions.nvxImageViewHandle.name()) &&
-      m_deviceFeatures.khrBufferDeviceAddress.bufferDeviceAddress;
-
-    if (enableCudaInterop) {
-      devExtensions.nvxBinaryImport.setMode(DxvkExtMode::Optional);
-      devExtensions.nvxImageViewHandle.setMode(DxvkExtMode::Optional);
-      devExtensions.khrBufferDeviceAddress.setMode(DxvkExtMode::Optional);
-
-      enabledFeatures.khrBufferDeviceAddress.bufferDeviceAddress = VK_TRUE;
-    }
 
     DxvkNameSet extensionsEnabled;
 
@@ -446,28 +423,6 @@ namespace dxvk {
     
     VkDevice device = VK_NULL_HANDLE;
     VkResult vr = m_vki->vkCreateDevice(m_handle, &info, nullptr, &device);
-
-    if (vr != VK_SUCCESS && enableCudaInterop) {
-      // Enabling certain Vulkan extensions can cause device creation to fail on
-      // Nvidia drivers if a certain kernel module isn't loaded, but we cannot know
-      // that in advance since the extensions are reported as supported anyway.
-      Logger::err("DxvkAdapter: Failed to create device, retrying without CUDA interop extensions");
-
-      extensionsEnabled.disableExtension(devExtensions.khrBufferDeviceAddress);
-      extensionsEnabled.disableExtension(devExtensions.nvxBinaryImport);
-      extensionsEnabled.disableExtension(devExtensions.nvxImageViewHandle);
-
-      enabledFeatures.khrBufferDeviceAddress.bufferDeviceAddress = VK_FALSE;
-
-      vk::removeStructFromPNextChain(&enabledFeatures.core.pNext,
-        VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES_KHR);
-
-      extensionNameList = extensionsEnabled.toNameList();
-      info.enabledExtensionCount      = extensionNameList.count();
-      info.ppEnabledExtensionNames    = extensionNameList.names();
-
-      vr = m_vki->vkCreateDevice(m_handle, &info, nullptr, &device);
-    }
 
     if (vr != VK_SUCCESS)
       throw DxvkError("DxvkAdapter: Failed to create device");

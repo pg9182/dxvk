@@ -13,8 +13,7 @@ namespace dxvk {
           D3D11Device*    pParent,
     const Rc<DxvkDevice>& Device)
   : D3D11DeviceContext(pParent, Device, DxvkCsChunkFlag::SingleUse),
-    m_csThread(Device->createContext()),
-    m_videoContext(this, Device) {
+    m_csThread(Device->createContext()) {
     EmitCs([
       cDevice                 = m_device,
       cRelaxedBarriers        = pParent->GetOptions()->relaxedBarriers,
@@ -45,11 +44,6 @@ namespace dxvk {
   
   
   HRESULT STDMETHODCALLTYPE D3D11ImmediateContext::QueryInterface(REFIID riid, void** ppvObject) {
-    if (riid == __uuidof(ID3D11VideoContext)) {
-      *ppvObject = ref(&m_videoContext);
-      return S_OK;
-    }
-
     return D3D11DeviceContext::QueryInterface(riid, ppvObject);
   }
 
@@ -102,8 +96,6 @@ namespace dxvk {
   
   
   void STDMETHODCALLTYPE D3D11ImmediateContext::Begin(ID3D11Asynchronous* pAsync) {
-    D3D10DeviceLock lock = LockContext();
-
     if (unlikely(!pAsync))
       return;
     
@@ -120,8 +112,6 @@ namespace dxvk {
 
 
   void STDMETHODCALLTYPE D3D11ImmediateContext::End(ID3D11Asynchronous* pAsync) {
-    D3D10DeviceLock lock = LockContext();
-
     if (unlikely(!pAsync))
       return;
     
@@ -161,8 +151,6 @@ namespace dxvk {
     if (hEvent)
       SignalEvent(hEvent);
     
-    D3D10DeviceLock lock = LockContext();
-    
     if (m_csIsBusy || !m_csChunk->empty()) {
       // Add commands to flush the threaded
       // context, then flush the command list
@@ -198,8 +186,6 @@ namespace dxvk {
   void STDMETHODCALLTYPE D3D11ImmediateContext::ExecuteCommandList(
           ID3D11CommandList*  pCommandList,
           BOOL                RestoreContextState) {
-    D3D10DeviceLock lock = LockContext();
-
     auto commandList = static_cast<D3D11CommandList*>(pCommandList);
     
     // Flush any outstanding commands so that
@@ -241,8 +227,6 @@ namespace dxvk {
           D3D11_MAP                   MapType,
           UINT                        MapFlags,
           D3D11_MAPPED_SUBRESOURCE*   pMappedResource) {
-    D3D10DeviceLock lock = LockContext();
-
     if (unlikely(!pResource))
       return E_INVALIDARG;
     
@@ -276,7 +260,6 @@ namespace dxvk {
     pResource->GetType(&resourceDim);
     
     if (unlikely(resourceDim != D3D11_RESOURCE_DIMENSION_BUFFER)) {
-      D3D10DeviceLock lock = LockContext();
       UnmapImage(GetCommonTexture(pResource), Subresource);
     }
   }
@@ -524,8 +507,6 @@ namespace dxvk {
 
 
   void D3D11ImmediateContext::SynchronizeCsThread() {
-    D3D10DeviceLock lock = LockContext();
-
     // Dispatch current chunk so that all commands
     // recorded prior to this function will be run
     FlushCsChunk();

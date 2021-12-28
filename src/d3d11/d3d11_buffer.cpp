@@ -11,8 +11,7 @@ namespace dxvk {
     const D3D11_BUFFER_DESC*          pDesc)
   : D3D11DeviceChild<ID3D11Buffer>(pDevice),
     m_desc        (*pDesc),
-    m_resource    (this),
-    m_d3d10       (this) {
+    m_resource    (this) {
     DxvkBufferCreateInfo  info;
     info.size   = pDesc->ByteWidth;
     info.usage  = VK_BUFFER_USAGE_TRANSFER_SRC_BIT
@@ -96,13 +95,6 @@ namespace dxvk {
      || riid == __uuidof(ID3D11Resource)
      || riid == __uuidof(ID3D11Buffer)) {
       *ppvObject = ref(this);
-      return S_OK;
-    }
-    
-    if (riid == __uuidof(ID3D10DeviceChild)
-     || riid == __uuidof(ID3D10Resource)
-     || riid == __uuidof(ID3D10Buffer)) {
-      *ppvObject = ref(&m_d3d10);
       return S_OK;
     }
 

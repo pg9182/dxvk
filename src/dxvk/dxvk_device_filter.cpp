@@ -28,8 +28,8 @@ namespace dxvk {
     }
 
     if (m_flags.test(DxvkDeviceFilterFlag::SkipCpuDevices)) {
-      if (properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_CPU) {
-        Logger::warn(str::format("Skipping CPU adapter: ", properties.deviceName));
+      if (properties.deviceType != VK_PHYSICAL_DEVICE_TYPE_CPU) {
+        Logger::warn(str::format("Skipping non-CPU adapter: ", properties.deviceName));
         return false;
       }
     }

@@ -2,8 +2,6 @@
 
 #include "d3d11_texture.h"
 
-#include "../dxvk/hud/dxvk_hud.h"
-
 #include "../dxvk/dxvk_swapchain_blitter.h"
 
 #include "../util/sync/sync_signal.h"
@@ -96,8 +94,6 @@ namespace dxvk {
     Rc<DxvkImageView>         m_swapImageView;
     Rc<DxvkSwapchainBlitter>  m_blitter;
 
-    Rc<hud::Hud>              m_hud;
-
     D3D11Texture2D*           m_backBuffer = nullptr;
     DxvkSubmitStatus          m_presentStatus;
 
@@ -135,8 +131,6 @@ namespace dxvk {
     void CreateBackBuffer();
 
     void CreateBlitter();
-
-    void CreateHud();
 
     void DestroyFrameLatencyEvent();
 

@@ -40,8 +40,6 @@ namespace dxvk {
 
   void STDMETHODCALLTYPE D3D11DeferredContext::Begin(
           ID3D11Asynchronous*         pAsync) {
-    D3D10DeviceLock lock = LockContext();
-
     if (unlikely(!pAsync))
       return;
 
@@ -68,8 +66,6 @@ namespace dxvk {
 
   void STDMETHODCALLTYPE D3D11DeferredContext::End(
           ID3D11Asynchronous*         pAsync) {
-    D3D10DeviceLock lock = LockContext();
-
     if (unlikely(!pAsync))
       return;
 
@@ -144,8 +140,6 @@ namespace dxvk {
   void STDMETHODCALLTYPE D3D11DeferredContext::ExecuteCommandList(
           ID3D11CommandList*  pCommandList,
           BOOL                RestoreContextState) {
-    D3D10DeviceLock lock = LockContext();
-
     FlushCsChunk();
     
     static_cast<D3D11CommandList*>(pCommandList)->EmitToCommandList(m_commandList.ptr());
@@ -160,8 +154,6 @@ namespace dxvk {
   HRESULT STDMETHODCALLTYPE D3D11DeferredContext::FinishCommandList(
           BOOL                RestoreDeferredContextState,
           ID3D11CommandList   **ppCommandList) {
-    D3D10DeviceLock lock = LockContext();
-
     FinalizeQueries();
     FlushCsChunk();
     
@@ -185,8 +177,6 @@ namespace dxvk {
           D3D11_MAP                   MapType,
           UINT                        MapFlags,
           D3D11_MAPPED_SUBRESOURCE*   pMappedResource) {
-    D3D10DeviceLock lock = LockContext();
-
     if (unlikely(!pResource || !pMappedResource))
       return E_INVALIDARG;
     

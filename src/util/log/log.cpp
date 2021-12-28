@@ -41,6 +41,10 @@ namespace dxvk {
   void Logger::err(const std::string& message) {
     s_instance.emitMsg(LogLevel::Error, message);
   }
+
+  void Logger::stub(const std::string& message) {
+    s_instance.emitMsg(LogLevel::Warn, "stub: " + message);
+  }
   
   
   void Logger::log(LogLevel level, const std::string& message) {

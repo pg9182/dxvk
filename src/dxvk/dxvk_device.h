@@ -12,7 +12,6 @@
 #include "dxvk_memory.h"
 #include "dxvk_meta_clear.h"
 #include "dxvk_objects.h"
-#include "dxvk_options.h"
 #include "dxvk_pipecache.h"
 #include "dxvk_pipemanager.h"
 #include "dxvk_queue.h"
@@ -102,14 +101,6 @@ namespace dxvk {
      */
     VkDevice handle() const {
       return m_vkd->device();
-    }
-
-    /**
-     * \brief Device options
-     * \returns Device options
-     */
-    const DxvkOptions& config() const {
-      return m_options;
     }
     
     /**
@@ -358,29 +349,6 @@ namespace dxvk {
       const SpirvCodeBuffer&          code);
     
     /**
-     * \brief Retrieves stat counters
-     * 
-     * Can be used by the HUD to display some
-     * internal information, such as memory
-     * usage, draw calls, etc.
-     */
-    DxvkStatCounters getStatCounters();
-
-    /**
-     * \brief Retrieves memors statistics
-     *
-     * \param [in] heap Memory heap index
-     * \returns Memory stats for this heap
-     */
-    DxvkMemoryStats getMemoryStats(uint32_t heap);
-
-    /**
-     * \brief Retreves current frame ID
-     * \returns Current frame ID
-     */
-    uint32_t getCurrentFrameId() const;
-    
-    /**
      * \brief Initializes dummy resources
      * 
      * Should be called after creating the device in
@@ -388,13 +356,6 @@ namespace dxvk {
      * and the device is usable.
      */
     void initResources();
-    
-    /**
-     * \brief Registers a shader
-     * \param [in] shader Newly compiled shader
-     */
-    void registerShader(
-      const Rc<DxvkShader>&         shader);
     
     /**
      * \brief Presents a swap chain image
@@ -475,8 +436,6 @@ namespace dxvk {
     void waitForIdle();
     
   private:
-    
-    DxvkOptions                 m_options;
 
     Rc<DxvkInstance>            m_instance;
     Rc<DxvkAdapter>             m_adapter;

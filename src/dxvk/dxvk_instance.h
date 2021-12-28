@@ -5,7 +5,6 @@
 #include "dxvk_adapter.h"
 #include "dxvk_device_filter.h"
 #include "dxvk_extension_provider.h"
-#include "dxvk_options.h"
 
 namespace dxvk {
   
@@ -91,14 +90,6 @@ namespace dxvk {
     }
 
     /**
-     * \brief DXVK options
-     * \returns DXVK options
-     */
-    const DxvkOptions& options() const {
-      return m_options;
-    }
-
-    /**
      * \brief Enabled instance extensions
      * \returns Enabled instance extensions
      */
@@ -109,7 +100,6 @@ namespace dxvk {
   private:
 
     Config              m_config;
-    DxvkOptions         m_options;
 
     Rc<vk::LibraryFn>       m_vkl;
     Rc<vk::InstanceFn>      m_vki;

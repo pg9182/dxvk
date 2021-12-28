@@ -31,11 +31,7 @@ namespace dxvk {
     useSdivForBufferIndex
       = adapter->matchesDriver(DxvkGpuVendor::Nvidia, VK_DRIVER_ID_NVIDIA_PROPRIETARY_KHR, 0, 0);
     
-    switch (device->config().useRawSsbo) {
-      case Tristate::Auto:  minSsboAlignment = devInfo.core.properties.limits.minStorageBufferOffsetAlignment; break;
-      case Tristate::True:  minSsboAlignment =  4u; break;
-      case Tristate::False: minSsboAlignment = ~0u; break;
-    }
+    minSsboAlignment = devInfo.core.properties.limits.minStorageBufferOffsetAlignment;
     
     invariantPosition        = options.invariantPosition;
     enableRtOutputNanFixup   = options.enableRtOutputNanFixup;

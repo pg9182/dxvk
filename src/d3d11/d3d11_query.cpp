@@ -8,8 +8,7 @@ namespace dxvk {
     const D3D11_QUERY_DESC1& desc)
   : D3D11DeviceChild<ID3D11Query1>(device),
     m_desc(desc),
-    m_state(D3D11_VK_QUERY_INITIAL),
-    m_d3d10(this) {
+    m_state(D3D11_VK_QUERY_INITIAL) {
     Rc<DxvkDevice> dxvkDevice = m_parent->GetDXVKDevice();
 
     switch (m_desc.Query) {
@@ -49,9 +48,6 @@ namespace dxvk {
       case D3D11_QUERY_SO_STATISTICS_STREAM0:
       case D3D11_QUERY_SO_OVERFLOW_PREDICATE:
       case D3D11_QUERY_SO_OVERFLOW_PREDICATE_STREAM0:
-        // FIXME it is technically incorrect to map
-        // SO_OVERFLOW_PREDICATE to the first stream,
-        // but this is good enough for D3D10 behaviour
         m_query[0] = dxvkDevice->createGpuQuery(
           VK_QUERY_TYPE_TRANSFORM_FEEDBACK_STREAM_EXT, 0, 0);
         break;
@@ -100,22 +96,9 @@ namespace dxvk {
       return S_OK;
     }
     
-    if (riid == __uuidof(IUnknown)
-     || riid == __uuidof(ID3D10DeviceChild)
-     || riid == __uuidof(ID3D10Asynchronous)
-     || riid == __uuidof(ID3D10Query)) {
-      *ppvObject = ref(&m_d3d10);
-      return S_OK;
-    }
-    
     if (m_desc.Query == D3D11_QUERY_OCCLUSION_PREDICATE) {
       if (riid == __uuidof(ID3D11Predicate)) {
         *ppvObject = AsPredicate(ref(this));
-        return S_OK;
-      }
-
-      if (riid == __uuidof(ID3D10Predicate)) {
-        *ppvObject = ref(&m_d3d10);
         return S_OK;
       }
     }

@@ -179,17 +179,6 @@ namespace dxvk {
       const DxvkDeviceFeatures& required) const;
     
     /**
-     * \brief Enables extensions for this adapter
-     *
-     * When creating a device, all extensions that
-     * are added using this method will be enabled
-     * in addition to the ones required by DXVK.
-     * This is used for OpenVR support.
-     */
-    void enableExtensions(
-      const DxvkNameSet&        extensions);
-    
-    /**
      * \brief Creates a DXVK device
      * 
      * Creates a logical device for this adapter.

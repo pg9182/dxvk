@@ -9,8 +9,7 @@ namespace dxvk {
     const DxvkVertexAttribute*  pAttributes,
           uint32_t              numBindings,
     const DxvkVertexBinding*    pBindings)
-  : D3D11DeviceChild<ID3D11InputLayout>(pDevice),
-    m_d3d10(this) {
+  : D3D11DeviceChild<ID3D11InputLayout>(pDevice) {
     m_attributes.resize(numAttributes);
     m_bindings.resize(numBindings);
     
@@ -37,12 +36,6 @@ namespace dxvk {
      || riid == __uuidof(ID3D11DeviceChild)
      || riid == __uuidof(ID3D11InputLayout)) {
       *ppvObject = ref(this);
-      return S_OK;
-    }
-    
-    if (riid == __uuidof(ID3D10DeviceChild)
-     || riid == __uuidof(ID3D10InputLayout)) {
-      *ppvObject = ref(&m_d3d10);
       return S_OK;
     }
     

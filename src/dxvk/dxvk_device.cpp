@@ -9,8 +9,7 @@ namespace dxvk {
     const Rc<vk::DeviceFn>&         vkd,
     const DxvkDeviceExtensions&     extensions,
     const DxvkDeviceFeatures&       features)
-  : m_options           (instance->options()),
-    m_instance          (instance),
+  : m_instance          (instance),
     m_adapter           (adapter),
     m_vkd               (vkd),
     m_extensions        (extensions),
@@ -29,10 +28,6 @@ namespace dxvk {
     // Wait for all pending Vulkan commands to be
     // executed before we destroy any resources.
     this->waitForIdle();
-
-    // Stop workers explicitly in order to prevent
-    // access to structures that are being destroyed.
-    m_objects.pipelineManager().stopWorkerThreads();
   }
 
 
@@ -171,38 +166,8 @@ namespace dxvk {
   }
   
   
-  DxvkStatCounters DxvkDevice::getStatCounters() {
-    DxvkPipelineCount pipe = m_objects.pipelineManager().getPipelineCount();
-    
-    DxvkStatCounters result;
-    result.setCtr(DxvkStatCounter::PipeCountGraphics, pipe.numGraphicsPipelines);
-    result.setCtr(DxvkStatCounter::PipeCountCompute,  pipe.numComputePipelines);
-    result.setCtr(DxvkStatCounter::PipeCompilerBusy,  m_objects.pipelineManager().isCompilingShaders());
-    result.setCtr(DxvkStatCounter::GpuIdleTicks,      m_submissionQueue.gpuIdleTicks());
-
-    std::lock_guard<sync::Spinlock> lock(m_statLock);
-    result.merge(m_statCounters);
-    return result;
-  }
-  
-  
-  DxvkMemoryStats DxvkDevice::getMemoryStats(uint32_t heap) {
-    return m_objects.memoryManager().getMemoryStats(heap);
-  }
-
-
-  uint32_t DxvkDevice::getCurrentFrameId() const {
-    return m_statCounters.getCtr(DxvkStatCounter::QueuePresentCount);
-  }
-  
-  
   void DxvkDevice::initResources() {
     m_objects.dummyResources().clearResources(this);
-  }
-
-
-  void DxvkDevice::registerShader(const Rc<DxvkShader>& shader) {
-    m_objects.pipelineManager().registerShader(shader);
   }
   
   

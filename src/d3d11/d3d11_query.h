@@ -3,8 +3,6 @@
 #include "../dxvk/dxvk_gpu_event.h"
 #include "../dxvk/dxvk_gpu_query.h"
 
-#include "../d3d10/d3d10_query.h"
-
 #include "d3d11_device_child.h"
 
 namespace dxvk {
@@ -74,10 +72,6 @@ namespace dxvk {
       m_stallMask |= 1;
       m_stallFlag |= bit::popcnt(m_stallMask) >= 16;
     }
-    
-    D3D10Query* GetD3D10Iface() {
-      return &m_d3d10;
-    }
 
     static HRESULT ValidateDesc(const D3D11_QUERY_DESC1* pDesc);
 
@@ -99,8 +93,6 @@ namespace dxvk {
     
     std::array<Rc<DxvkGpuQuery>, MaxGpuQueries> m_query;
     std::array<Rc<DxvkGpuEvent>, MaxGpuEvents>  m_event;
-
-    D3D10Query m_d3d10;
 
     uint32_t m_stallMask = 0;
     bool     m_stallFlag = false;

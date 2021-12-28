@@ -176,26 +176,6 @@ namespace dxvk {
       m_memTypes[i].memTypeId  = i;
       m_memTypes[i].chunkSize  = pickChunkSize(i);
     }
-
-    /* Work around an issue on Nvidia drivers where using the entire
-     * device_local | host_visible heap can cause crashes or slowdowns */
-    if (m_device->properties().core.properties.vendorID == uint16_t(DxvkGpuVendor::Nvidia)) {
-      bool shrinkNvidiaHvvHeap = device->adapter()->matchesDriver(DxvkGpuVendor::Nvidia,
-        VK_DRIVER_ID_NVIDIA_PROPRIETARY_KHR, 0, VK_MAKE_VERSION(465, 0, 0));
-
-      applyTristate(shrinkNvidiaHvvHeap, device->config().shrinkNvidiaHvvHeap);
-
-      if (shrinkNvidiaHvvHeap) {
-        for (uint32_t i = 0; i < m_memProps.memoryTypeCount; i++) {
-          VkMemoryPropertyFlags flags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
-
-          if ((m_memTypes[i].memType.propertyFlags & flags) == flags) {
-            m_memTypes[i].heap->budget = 32 << 20;
-            m_memTypes[i].chunkSize    =  1 << 20;
-          }
-        }
-      }
-    }
   }
   
   

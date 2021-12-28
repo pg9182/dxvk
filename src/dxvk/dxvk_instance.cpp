@@ -1,8 +1,6 @@
 #include <version.h>
 
 #include "dxvk_instance.h"
-#include "dxvk_openvr.h"
-#include "dxvk_openxr.h"
 #include "dxvk_platform_exts.h"
 
 #include <algorithm>
@@ -14,18 +12,9 @@ namespace dxvk {
     Logger::info(str::format("DXVK: ", DXVK_VERSION));
 
     m_config = Config::getUserConfig();
-    m_config.merge(Config::getAppConfig(env::getExePath()));
     m_config.logOptions();
 
-    m_options = DxvkOptions(m_config);
-
     m_extProviders.push_back(&DxvkPlatformExts::s_instance);
-
-    if (m_options.enableOpenVR)
-      m_extProviders.push_back(&VrInstance::s_instance);
-
-    if (m_options.enableOpenXR)
-      m_extProviders.push_back(&DxvkXrProvider::s_instance);
 
     Logger::info("Built-in extension providers:");
     for (const auto& provider : m_extProviders)
@@ -41,13 +30,6 @@ namespace dxvk {
 
     for (const auto& provider : m_extProviders)
       provider->initDeviceExtensions(this);
-
-    for (uint32_t i = 0; i < m_adapters.size(); i++) {
-      for (const auto& provider : m_extProviders) {
-        m_adapters[i]->enableExtensions(
-          provider->getDeviceExtensions(i));
-      }
-    }
   }
   
   

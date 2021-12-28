@@ -5,8 +5,9 @@
 namespace dxvk {
 
   D3D11UserDefinedAnnotation::D3D11UserDefinedAnnotation(D3D11DeviceContext* ctx)
-  : m_container(ctx),
-    m_eventDepth(0) { }
+  : m_container(ctx) {
+
+  }
 
 
   D3D11UserDefinedAnnotation::~D3D11UserDefinedAnnotation() {
@@ -35,22 +36,6 @@ namespace dxvk {
           LPCWSTR                 Name) {
     if (!m_container->IsAnnotationEnabled())
       return -1;
-
-    D3D10DeviceLock lock = m_container->LockContext();
-
-    m_container->EmitCs([labelName = dxvk::str::fromws(Name)](DxvkContext *ctx) {
-      VkDebugUtilsLabelEXT label;
-      label.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT;
-      label.pNext = nullptr;
-      label.pLabelName = labelName.c_str();
-      label.color[0] = 1.0f;
-      label.color[1] = 1.0f;
-      label.color[2] = 1.0f;
-      label.color[3] = 1.0f;
-
-      ctx->beginDebugLabel(&label);
-    });
-
     return m_eventDepth++;
   }
 
@@ -58,13 +43,6 @@ namespace dxvk {
   INT STDMETHODCALLTYPE D3D11UserDefinedAnnotation::EndEvent() {
     if (!m_container->IsAnnotationEnabled())
       return -1;
-
-    D3D10DeviceLock lock = m_container->LockContext();
-
-    m_container->EmitCs([](DxvkContext *ctx) {
-      ctx->endDebugLabel();
-    });
-
     return m_eventDepth--;
   }
 
@@ -73,21 +51,6 @@ namespace dxvk {
           LPCWSTR                 Name) {
     if (!m_container->IsAnnotationEnabled())
       return;
-
-    D3D10DeviceLock lock = m_container->LockContext();
-
-    m_container->EmitCs([labelName = dxvk::str::fromws(Name)](DxvkContext *ctx) {
-      VkDebugUtilsLabelEXT label;
-      label.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT;
-      label.pNext = nullptr;
-      label.pLabelName = labelName.c_str();
-      label.color[0] = 1.0f;
-      label.color[1] = 1.0f;
-      label.color[2] = 1.0f;
-      label.color[3] = 1.0f;
-
-      ctx->insertDebugLabel(&label);
-    });
   }
 
 

@@ -50,12 +50,6 @@ dxvk_shaders = files([
   'shaders/dxvk_unpack_d24s8_as_d32s8.comp',
   'shaders/dxvk_unpack_d24s8.comp',
   'shaders/dxvk_unpack_d32s8.comp',
-  
-  'hud/shaders/hud_line_frag.frag',
-  'hud/shaders/hud_line_vert.vert',
-
-  'hud/shaders/hud_text_frag.frag',
-  'hud/shaders/hud_text_vert.vert',
 ])
 
 dxvk_src = files([
@@ -86,9 +80,6 @@ dxvk_src = files([
   'dxvk_meta_mipgen.cpp',
   'dxvk_meta_pack.cpp',
   'dxvk_meta_resolve.cpp',
-  'dxvk_openvr.cpp',
-  'dxvk_openxr.cpp',
-  'dxvk_options.cpp',
   'dxvk_pipecache.cpp',
   'dxvk_pipelayout.cpp',
   'dxvk_pipemanager.cpp',
@@ -101,18 +92,12 @@ dxvk_src = files([
   'dxvk_signal.cpp',
   'dxvk_spec_const.cpp',
   'dxvk_staging.cpp',
-  'dxvk_state_cache.cpp',
   'dxvk_stats.cpp',
   'dxvk_swapchain_blitter.cpp',
   'dxvk_unbound.cpp',
   'dxvk_util.cpp',
 
   'platform/dxvk_win32_exts.cpp',
-  
-  'hud/dxvk_hud.cpp',
-  'hud/dxvk_hud_font.cpp',
-  'hud/dxvk_hud_item.cpp',
-  'hud/dxvk_hud_renderer.cpp',
 ])
 
 thread_dep = dependency('threads')

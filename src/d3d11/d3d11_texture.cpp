@@ -821,87 +821,6 @@ namespace dxvk {
     return desc->ArraySize == 1
         && desc->MipLevels == 1;
   }
-
-
-
-
-  D3D11VkInteropSurface::D3D11VkInteropSurface(
-          ID3D11Resource*     pResource,
-          D3D11CommonTexture* pTexture)
-  : m_resource(pResource),
-    m_texture (pTexture) {
-      
-  }
-  
-  
-  D3D11VkInteropSurface::~D3D11VkInteropSurface() {
-    
-  }
-  
-  
-  ULONG STDMETHODCALLTYPE D3D11VkInteropSurface::AddRef() {
-    return m_resource->AddRef();
-  }
-  
-  
-  ULONG STDMETHODCALLTYPE D3D11VkInteropSurface::Release() {
-    return m_resource->Release();
-  }
-  
-  
-  HRESULT STDMETHODCALLTYPE D3D11VkInteropSurface::QueryInterface(
-          REFIID                  riid,
-          void**                  ppvObject) {
-    return m_resource->QueryInterface(riid, ppvObject);
-  }
-  
-  
-  HRESULT STDMETHODCALLTYPE D3D11VkInteropSurface::GetDevice(
-          IDXGIVkInteropDevice**  ppDevice) {
-    Com<ID3D11Device> device;
-    m_resource->GetDevice(&device);
-    
-    return device->QueryInterface(
-      __uuidof(IDXGIVkInteropDevice),
-      reinterpret_cast<void**>(ppDevice));
-  }
-  
-  
-  HRESULT STDMETHODCALLTYPE D3D11VkInteropSurface::GetVulkanImageInfo(
-          VkImage*              pHandle,
-          VkImageLayout*        pLayout,
-          VkImageCreateInfo*    pInfo) {
-    const Rc<DxvkImage> image = m_texture->GetImage();
-    const DxvkImageCreateInfo& info = image->info();
-    
-    if (pHandle != nullptr)
-      *pHandle = image->handle();
-    
-    if (pLayout != nullptr)
-      *pLayout = info.layout;
-    
-    if (pInfo != nullptr) {
-      // We currently don't support any extended structures
-      if (pInfo->sType != VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO
-       || pInfo->pNext != nullptr)
-        return E_INVALIDARG;
-      
-      pInfo->flags          = 0;
-      pInfo->imageType      = info.type;
-      pInfo->format         = info.format;
-      pInfo->extent         = info.extent;
-      pInfo->mipLevels      = info.mipLevels;
-      pInfo->arrayLayers    = info.numLayers;
-      pInfo->samples        = info.sampleCount;
-      pInfo->tiling         = info.tiling;
-      pInfo->usage          = info.usage;
-      pInfo->sharingMode    = VK_SHARING_MODE_EXCLUSIVE;
-      pInfo->queueFamilyIndexCount = 0;
-      pInfo->initialLayout  = VK_IMAGE_LAYOUT_UNDEFINED;
-    }
-    
-    return S_OK;
-  }
   
   
   ///////////////////////////////////////////
@@ -911,10 +830,8 @@ namespace dxvk {
     const D3D11_COMMON_TEXTURE_DESC*  pDesc)
   : D3D11DeviceChild<ID3D11Texture1D>(pDevice),
     m_texture (pDevice, pDesc, D3D11_RESOURCE_DIMENSION_TEXTURE1D, 0, VK_NULL_HANDLE),
-    m_interop (this, &m_texture),
     m_surface (this, &m_texture),
-    m_resource(this),
-    m_d3d10   (this) {
+    m_resource(this) {
     
   }
   
@@ -938,13 +855,6 @@ namespace dxvk {
       return S_OK;
     }
     
-    if (riid == __uuidof(ID3D10DeviceChild)
-     || riid == __uuidof(ID3D10Resource)
-     || riid == __uuidof(ID3D10Texture1D)) {
-      *ppvObject = ref(&m_d3d10);
-      return S_OK;
-    }
-    
     if (m_surface.isSurfaceCompatible()
      && (riid == __uuidof(IDXGISurface)
       || riid == __uuidof(IDXGISurface1)
@@ -959,11 +869,6 @@ namespace dxvk {
      || riid == __uuidof(IDXGIResource1)) {
        *ppvObject = ref(&m_resource);
        return S_OK;
-    }
-    
-    if (riid == __uuidof(IDXGIVkInteropSurface)) {
-      *ppvObject = ref(&m_interop);
-      return S_OK;
     }
     
     Logger::warn("D3D11Texture1D::QueryInterface: Unknown interface query");
@@ -1009,10 +914,8 @@ namespace dxvk {
     const D3D11_COMMON_TEXTURE_DESC*  pDesc)
   : D3D11DeviceChild<ID3D11Texture2D1>(pDevice),
     m_texture (pDevice, pDesc, D3D11_RESOURCE_DIMENSION_TEXTURE2D, 0, VK_NULL_HANDLE),
-    m_interop (this, &m_texture),
     m_surface (this, &m_texture),
-    m_resource(this),
-    m_d3d10   (this) {
+    m_resource(this){
     
   }
 
@@ -1024,10 +927,8 @@ namespace dxvk {
           VkImage                     vkImage)
   : D3D11DeviceChild<ID3D11Texture2D1>(pDevice),
     m_texture (pDevice, pDesc, D3D11_RESOURCE_DIMENSION_TEXTURE2D, DxgiUsage, vkImage),
-    m_interop (this, &m_texture),
     m_surface (this, &m_texture),
-    m_resource(this),
-    m_d3d10   (this) {
+    m_resource(this) {
     
   }
   
@@ -1052,13 +953,6 @@ namespace dxvk {
       return S_OK;
     }
 
-    if (riid == __uuidof(ID3D10DeviceChild)
-     || riid == __uuidof(ID3D10Resource)
-     || riid == __uuidof(ID3D10Texture2D)) {
-      *ppvObject = ref(&m_d3d10);
-      return S_OK;
-    }
-
     if (m_surface.isSurfaceCompatible()
      && (riid == __uuidof(IDXGISurface)
       || riid == __uuidof(IDXGISurface1)
@@ -1073,11 +967,6 @@ namespace dxvk {
      || riid == __uuidof(IDXGIResource1)) {
        *ppvObject = ref(&m_resource);
        return S_OK;
-    }
-    
-    if (riid == __uuidof(IDXGIVkInteropSurface)) {
-      *ppvObject = ref(&m_interop);
-      return S_OK;
     }
     
     Logger::warn("D3D11Texture2D::QueryInterface: Unknown interface query");
@@ -1140,9 +1029,7 @@ namespace dxvk {
     const D3D11_COMMON_TEXTURE_DESC*  pDesc)
   : D3D11DeviceChild<ID3D11Texture3D1>(pDevice),
     m_texture (pDevice, pDesc, D3D11_RESOURCE_DIMENSION_TEXTURE3D, 0, VK_NULL_HANDLE),
-    m_interop (this, &m_texture),
-    m_resource(this),
-    m_d3d10   (this) {
+    m_resource(this) {
     
   }
   
@@ -1167,24 +1054,12 @@ namespace dxvk {
       return S_OK;
     }
     
-    if (riid == __uuidof(ID3D10DeviceChild)
-     || riid == __uuidof(ID3D10Resource)
-     || riid == __uuidof(ID3D10Texture3D)) {
-      *ppvObject = ref(&m_d3d10);
-      return S_OK;
-    }
-    
     if (riid == __uuidof(IDXGIObject)
      || riid == __uuidof(IDXGIDeviceSubObject)
      || riid == __uuidof(IDXGIResource)
      || riid == __uuidof(IDXGIResource1)) {
        *ppvObject = ref(&m_resource);
        return S_OK;
-    }
-    
-    if (riid == __uuidof(IDXGIVkInteropSurface)) {
-      *ppvObject = ref(&m_interop);
-      return S_OK;
     }
     
     Logger::warn("D3D11Texture3D::QueryInterface: Unknown interface query");

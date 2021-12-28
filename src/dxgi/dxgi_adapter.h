@@ -13,31 +13,6 @@ namespace dxvk {
   class DxgiFactory;
   class DxgiOutput;
 
-
-  class DxgiVkAdapter : public IDXGIVkInteropAdapter {
-
-  public:
-
-    DxgiVkAdapter(DxgiAdapter* pAdapter);
-
-    ULONG STDMETHODCALLTYPE AddRef();
-    
-    ULONG STDMETHODCALLTYPE Release();
-    
-    HRESULT STDMETHODCALLTYPE QueryInterface(
-            REFIID                    riid,
-            void**                    ppvObject);
-    
-    void STDMETHODCALLTYPE GetVulkanHandles(
-            VkInstance*               pInstance,
-            VkPhysicalDevice*         pPhysDev);
-
-  private:
-
-    DxgiAdapter* m_adapter;
-
-  };
-
   
   class DxgiAdapter : public DxgiObject<IDXGIDXVKAdapter> {
     
@@ -49,6 +24,10 @@ namespace dxvk {
             UINT                      index);
 
     ~DxgiAdapter();
+
+    ULONG STDMETHODCALLTYPE AddRef() final;
+    
+    ULONG STDMETHODCALLTYPE Release() final;
     
     HRESULT STDMETHODCALLTYPE QueryInterface(
             REFIID                    riid,
@@ -102,15 +81,14 @@ namespace dxvk {
     void STDMETHODCALLTYPE UnregisterVideoMemoryBudgetChangeNotification(
             DWORD                         dwCookie) final;
 
-    Rc<DxvkAdapter> STDMETHODCALLTYPE GetDXVKAdapter() final;
+    Rc<DxvkAdapter> STDMETHODCALLTYPE GetDXVKAdapter();
     
-    Rc<DxvkInstance> STDMETHODCALLTYPE GetDXVKInstance() final;
+    Rc<DxvkInstance> STDMETHODCALLTYPE GetDXVKInstance();
 
   private:
     
     Com<DxgiFactory>  m_factory;
     Rc<DxvkAdapter>   m_adapter;
-    DxgiVkAdapter     m_interop;
     
     UINT              m_index;
     UINT64            m_memReservation[2] = { 0, 0 };
@@ -121,20 +99,12 @@ namespace dxvk {
     DWORD                             m_eventCookie = 0;
     std::unordered_map<DWORD, HANDLE> m_eventMap;
     dxvk::thread                      m_eventThread;
-
-    void runEventThread();
     
     struct MonitorEnumInfo {
       UINT      iMonitorId;
       HMONITOR  oMonitor;
     };
-    
-    static BOOL CALLBACK MonitorEnumProc(
-            HMONITOR                  hmon,
-            HDC                       hdc,
-            LPRECT                    rect,
-            LPARAM                    lp);
-    
+
   };
 
 }
