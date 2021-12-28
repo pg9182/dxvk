@@ -92,9 +92,6 @@ namespace dxvk {
     // here is reasonable since there will usually only be a small
     // number of mapped resources per command list.
     std::vector<D3D11DeferredContextMapEntry> m_mappedResources;
-    
-    // Begun and ended queries, will also be stored in command list
-    std::vector<Com<D3D11Query, false>> m_queriesBegun;
 
     HRESULT MapBuffer(
             ID3D11Resource*               pResource,
@@ -108,8 +105,6 @@ namespace dxvk {
             D3D11_MAP                     MapType,
             UINT                          MapFlags,
             D3D11DeferredContextMapEntry* pMapEntry);
-    
-    void FinalizeQueries();
 
     Com<D3D11CommandList> CreateCommandList();
     

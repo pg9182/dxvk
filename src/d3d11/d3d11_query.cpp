@@ -7,77 +7,11 @@ namespace dxvk {
           D3D11Device*       device,
     const D3D11_QUERY_DESC1& desc)
   : D3D11DeviceChild<ID3D11Query1>(device),
-    m_desc(desc),
-    m_state(D3D11_VK_QUERY_INITIAL) {
-    Rc<DxvkDevice> dxvkDevice = m_parent->GetDXVKDevice();
-
-    switch (m_desc.Query) {
-      case D3D11_QUERY_EVENT:
-        m_event[0] = dxvkDevice->createGpuEvent();
-        break;
-        
-      case D3D11_QUERY_OCCLUSION:
-        m_query[0] = dxvkDevice->createGpuQuery(
-          VK_QUERY_TYPE_OCCLUSION,
-          VK_QUERY_CONTROL_PRECISE_BIT, 0);
-        break;
-      
-      case D3D11_QUERY_OCCLUSION_PREDICATE:
-        m_query[0] = dxvkDevice->createGpuQuery(
-          VK_QUERY_TYPE_OCCLUSION, 0, 0);
-        break;
-        
-      case D3D11_QUERY_TIMESTAMP:
-        m_query[0] = dxvkDevice->createGpuQuery(
-          VK_QUERY_TYPE_TIMESTAMP, 0, 0);
-        break;
-      
-      case D3D11_QUERY_TIMESTAMP_DISJOINT:
-        for (uint32_t i = 0; i < 2; i++) {
-          m_query[i] = dxvkDevice->createGpuQuery(
-            VK_QUERY_TYPE_TIMESTAMP, 0, 0);
-        }
-        break;
-      
-      case D3D11_QUERY_PIPELINE_STATISTICS:
-        m_query[0] = dxvkDevice->createGpuQuery(
-          VK_QUERY_TYPE_PIPELINE_STATISTICS, 0, 0);
-        break;
-      
-      case D3D11_QUERY_SO_STATISTICS:
-      case D3D11_QUERY_SO_STATISTICS_STREAM0:
-      case D3D11_QUERY_SO_OVERFLOW_PREDICATE:
-      case D3D11_QUERY_SO_OVERFLOW_PREDICATE_STREAM0:
-        m_query[0] = dxvkDevice->createGpuQuery(
-          VK_QUERY_TYPE_TRANSFORM_FEEDBACK_STREAM_EXT, 0, 0);
-        break;
-      
-      case D3D11_QUERY_SO_STATISTICS_STREAM1:
-      case D3D11_QUERY_SO_OVERFLOW_PREDICATE_STREAM1:
-        m_query[0] = dxvkDevice->createGpuQuery(
-          VK_QUERY_TYPE_TRANSFORM_FEEDBACK_STREAM_EXT, 0, 1);
-        break;
-      
-      case D3D11_QUERY_SO_STATISTICS_STREAM2:
-      case D3D11_QUERY_SO_OVERFLOW_PREDICATE_STREAM2:
-        m_query[0] = dxvkDevice->createGpuQuery(
-          VK_QUERY_TYPE_TRANSFORM_FEEDBACK_STREAM_EXT, 0, 2);
-        break;
-      
-      case D3D11_QUERY_SO_STATISTICS_STREAM3:
-      case D3D11_QUERY_SO_OVERFLOW_PREDICATE_STREAM3:
-        m_query[0] = dxvkDevice->createGpuQuery(
-          VK_QUERY_TYPE_TRANSFORM_FEEDBACK_STREAM_EXT, 0, 3);
-        break;
-      
-      default:
-        throw DxvkError(str::format("D3D11: Unhandled query type: ", desc.Query));
-    }
+    m_desc(desc) {
   }
   
   
   D3D11Query::~D3D11Query() {
-
   }
   
     
@@ -158,133 +92,38 @@ namespace dxvk {
   void STDMETHODCALLTYPE D3D11Query::GetDesc1(D3D11_QUERY_DESC1* pDesc) {
     *pDesc = m_desc;
   }
-  
-  
-  void D3D11Query::Begin(DxvkContext* ctx) {
-    switch (m_desc.Query) {
-      case D3D11_QUERY_EVENT:
-      case D3D11_QUERY_TIMESTAMP:
-        break;
-
-      case D3D11_QUERY_TIMESTAMP_DISJOINT:
-        ctx->writeTimestamp(m_query[1]);
-        break;
-      
-      default:
-        ctx->beginQuery(m_query[0]);
-    }
-  }
-  
-  
-  void D3D11Query::End(DxvkContext* ctx) {
-    switch (m_desc.Query) {
-      case D3D11_QUERY_EVENT:
-        ctx->signalGpuEvent(m_event[0]);
-        break;
-      
-      case D3D11_QUERY_TIMESTAMP:
-      case D3D11_QUERY_TIMESTAMP_DISJOINT:
-        ctx->writeTimestamp(m_query[0]);
-        break;
-      
-      default:
-        ctx->endQuery(m_query[0]);
-    }
-
-    m_resetCtr.fetch_sub(1, std::memory_order_release);
-  }
-  
-  
-  bool STDMETHODCALLTYPE D3D11Query::DoBegin() {
-    if (!IsScoped() || m_state == D3D11_VK_QUERY_BEGUN)
-      return false;
-
-    m_state = D3D11_VK_QUERY_BEGUN;
-    return true;
-  }
-
-  bool STDMETHODCALLTYPE D3D11Query::DoEnd() {
-    // Apparently the D3D11 runtime implicitly begins the query
-    // if it is in the wrong state at the time End is called, so
-    // let the caller react to it instead of just failing here.
-    bool result = m_state == D3D11_VK_QUERY_BEGUN || !IsScoped();
-
-    m_state = D3D11_VK_QUERY_ENDED;
-    m_resetCtr.fetch_add(1, std::memory_order_acquire);
-    return result;
-  }
-
 
   HRESULT STDMETHODCALLTYPE D3D11Query::GetData(
           void*                             pData,
           UINT                              GetDataFlags) {
-    if (m_state != D3D11_VK_QUERY_ENDED)
-      return DXGI_ERROR_INVALID_CALL;
-
-    if (m_resetCtr != 0u)
-      return S_FALSE;
-
     if (m_desc.Query == D3D11_QUERY_EVENT) {
-      DxvkGpuEventStatus status = m_event[0]->test();
-
-      if (status == DxvkGpuEventStatus::Invalid)
-        return DXGI_ERROR_INVALID_CALL;
-      
-      bool signaled = status == DxvkGpuEventStatus::Signaled;
-
-      if (pData != nullptr)
-        *static_cast<BOOL*>(pData) = signaled;
-      
-      return signaled ? S_OK : S_FALSE;
-    } else {
-      std::array<DxvkQueryData, MaxGpuQueries> queryData = { };
-      
-      for (uint32_t i = 0; i < MaxGpuQueries && m_query[i] != nullptr; i++) {
-        DxvkGpuQueryStatus status = m_query[i]->getData(queryData[i]);
-
-        if (status == DxvkGpuQueryStatus::Invalid
-         || status == DxvkGpuQueryStatus::Failed)
-          return DXGI_ERROR_INVALID_CALL;
-        
-        if (status == DxvkGpuQueryStatus::Pending)
-          return S_FALSE;
-      }
-      
+      return S_OK;
+    } else {      
       if (pData == nullptr)
         return S_OK;
       
       switch (m_desc.Query) {
         case D3D11_QUERY_OCCLUSION:
-          *static_cast<UINT64*>(pData) = queryData[0].occlusion.samplesPassed;
+          *static_cast<UINT64*>(pData) = 0;
           return S_OK;
         
         case D3D11_QUERY_OCCLUSION_PREDICATE:
-          *static_cast<BOOL*>(pData) = queryData[0].occlusion.samplesPassed != 0;
+          *static_cast<BOOL*>(pData) = FALSE;
           return S_OK;
         
         case D3D11_QUERY_TIMESTAMP:
-          *static_cast<UINT64*>(pData) = queryData[0].timestamp.time;
+          *static_cast<UINT64*>(pData) = 1;
           return S_OK;
         
         case D3D11_QUERY_TIMESTAMP_DISJOINT: {
           auto data = static_cast<D3D11_QUERY_DATA_TIMESTAMP_DISJOINT*>(pData);
-          data->Frequency = GetTimestampQueryFrequency();
-          data->Disjoint  = queryData[0].timestamp.time < queryData[1].timestamp.time;
+          data->Frequency = 1;
+          data->Disjoint  = false;
         } return S_OK;
         
         case D3D11_QUERY_PIPELINE_STATISTICS: {
           auto data = static_cast<D3D11_QUERY_DATA_PIPELINE_STATISTICS*>(pData);
-          data->IAVertices    = queryData[0].statistic.iaVertices;
-          data->IAPrimitives  = queryData[0].statistic.iaPrimitives;
-          data->VSInvocations = queryData[0].statistic.vsInvocations;
-          data->GSInvocations = queryData[0].statistic.gsInvocations;
-          data->GSPrimitives  = queryData[0].statistic.gsPrimitives;
-          data->CInvocations  = queryData[0].statistic.clipInvocations;
-          data->CPrimitives   = queryData[0].statistic.clipPrimitives;
-          data->PSInvocations = queryData[0].statistic.fsInvocations;
-          data->HSInvocations = queryData[0].statistic.tcsPatches;
-          data->DSInvocations = queryData[0].statistic.tesInvocations;
-          data->CSInvocations = queryData[0].statistic.csInvocations;
+          *data = (D3D11_QUERY_DATA_PIPELINE_STATISTICS){};
         } return S_OK;
 
         case D3D11_QUERY_SO_STATISTICS:
@@ -293,8 +132,7 @@ namespace dxvk {
         case D3D11_QUERY_SO_STATISTICS_STREAM2:
         case D3D11_QUERY_SO_STATISTICS_STREAM3: {
           auto data = static_cast<D3D11_QUERY_DATA_SO_STATISTICS*>(pData);
-          data->NumPrimitivesWritten    = queryData[0].xfbStream.primitivesWritten;
-          data->PrimitivesStorageNeeded = queryData[0].xfbStream.primitivesNeeded;
+          *data = (D3D11_QUERY_DATA_SO_STATISTICS){};
         } return S_OK;
           
         case D3D11_QUERY_SO_OVERFLOW_PREDICATE:
@@ -303,8 +141,7 @@ namespace dxvk {
         case D3D11_QUERY_SO_OVERFLOW_PREDICATE_STREAM2:
         case D3D11_QUERY_SO_OVERFLOW_PREDICATE_STREAM3: {
           auto data = static_cast<BOOL*>(pData);
-          *data = queryData[0].xfbStream.primitivesNeeded
-                > queryData[0].xfbStream.primitivesWritten;
+          *data = FALSE;
         } return S_OK;
 
         default:
@@ -312,24 +149,6 @@ namespace dxvk {
           return E_INVALIDARG;
       }
     }
-  }
-  
-  
-  UINT64 D3D11Query::GetTimestampQueryFrequency() const {
-    Rc<DxvkDevice>  device  = m_parent->GetDXVKDevice();
-    Rc<DxvkAdapter> adapter = device->adapter();
-
-    VkPhysicalDeviceLimits limits = adapter->deviceProperties().limits;
-    return uint64_t(1'000'000'000.0f / limits.timestampPeriod);
-  }
-
-
-  HRESULT D3D11Query::ValidateDesc(const D3D11_QUERY_DESC1* pDesc) {
-    if (pDesc->Query       >= D3D11_QUERY_PIPELINE_STATISTICS
-     && pDesc->ContextType >  D3D11_CONTEXT_TYPE_3D)
-      return E_INVALIDARG;
-    
-    return S_OK;
   }
   
 }

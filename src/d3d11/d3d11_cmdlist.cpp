@@ -42,12 +42,6 @@ namespace dxvk {
   void D3D11CommandList::AddChunk(DxvkCsChunkRef&& Chunk) {
     m_chunks.push_back(std::move(Chunk));
   }
-  
-  
-  void D3D11CommandList::AddQuery(D3D11Query* pQuery) {
-    m_queries.emplace_back(pQuery);
-  }
-
 
   void D3D11CommandList::EmitToCommandList(ID3D11CommandList* pCommandList) {
     auto cmdList = static_cast<D3D11CommandList*>(pCommandList);
@@ -55,17 +49,11 @@ namespace dxvk {
     for (const auto& chunk : m_chunks)
       cmdList->m_chunks.push_back(chunk);
 
-    for (const auto& query : m_queries)
-      cmdList->m_queries.push_back(query);
-
     MarkSubmitted();
   }
   
   
   void D3D11CommandList::EmitToCsThread(DxvkCsThread* CsThread) {
-    for (const auto& query : m_queries)
-      query->DoDeferredEnd();
-
     for (const auto& chunk : m_chunks)
       CsThread->dispatchChunk(DxvkCsChunkRef(chunk));
     

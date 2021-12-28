@@ -76,65 +76,15 @@ namespace dxvk {
 
     // Get query status directly from the query object
     auto query = static_cast<D3D11Query*>(pAsync);
-    HRESULT hr = query->GetData(pData, GetDataFlags);
-    
-    // If we're likely going to spin on the asynchronous object,
-    // flush the context so that we're keeping the GPU busy.
-    if (hr == S_FALSE) {
-      // Don't mark the event query as stalling if the app does
-      // not intend to spin on it. This reduces flushes on End.
-      if (!(GetDataFlags & D3D11_ASYNC_GETDATA_DONOTFLUSH))
-        query->NotifyStall();
-
-      // Ignore the DONOTFLUSH flag here as some games will spin
-      // on queries without ever flushing the context otherwise.
-      FlushImplicit(FALSE);
-    }
-    
-    return hr;
+    return query->GetData(pData, GetDataFlags);
   }
   
   
   void STDMETHODCALLTYPE D3D11ImmediateContext::Begin(ID3D11Asynchronous* pAsync) {
-    if (unlikely(!pAsync))
-      return;
-    
-    auto query = static_cast<D3D11Query*>(pAsync);
-
-    if (unlikely(!query->DoBegin()))
-      return;
-
-    EmitCs([cQuery = Com<D3D11Query, false>(query)]
-    (DxvkContext* ctx) {
-      cQuery->Begin(ctx);
-    });
   }
 
 
   void STDMETHODCALLTYPE D3D11ImmediateContext::End(ID3D11Asynchronous* pAsync) {
-    if (unlikely(!pAsync))
-      return;
-    
-    auto query = static_cast<D3D11Query*>(pAsync);
-
-    if (unlikely(!query->DoEnd())) {
-      EmitCs([cQuery = Com<D3D11Query, false>(query)]
-      (DxvkContext* ctx) {
-        cQuery->Begin(ctx);
-      });
-    }
-
-    EmitCs([cQuery = Com<D3D11Query, false>(query)]
-    (DxvkContext* ctx) {
-      cQuery->End(ctx);
-    });
-
-    if (unlikely(query->IsEvent())) {
-      query->NotifyEnd();
-      query->IsStalling()
-        ? Flush()
-        : FlushImplicit(TRUE);
-    }
   }
 
 

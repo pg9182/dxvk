@@ -1204,11 +1204,6 @@ namespace dxvk {
     if (!pQueryDesc)
       return E_INVALIDARG;
     
-    HRESULT hr = D3D11Query::ValidateDesc(pQueryDesc);
-
-    if (FAILED(hr))
-      return hr;
-    
     if (!ppQuery)
       return S_FALSE;
     

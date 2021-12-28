@@ -22,9 +22,6 @@ namespace dxvk {
     
     void AddChunk(
             DxvkCsChunkRef&&    Chunk);
-
-    void AddQuery(
-            D3D11Query*         pQuery);
     
     void EmitToCommandList(
             ID3D11CommandList*  pCommandList);
@@ -37,7 +34,6 @@ namespace dxvk {
     UINT         const m_contextFlags;
     
     std::vector<DxvkCsChunkRef>         m_chunks;
-    std::vector<Com<D3D11Query, false>> m_queries;
 
     std::atomic<bool> m_submitted = { false };
     std::atomic<bool> m_warned    = { false };

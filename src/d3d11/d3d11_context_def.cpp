@@ -40,58 +40,11 @@ namespace dxvk {
 
   void STDMETHODCALLTYPE D3D11DeferredContext::Begin(
           ID3D11Asynchronous*         pAsync) {
-    if (unlikely(!pAsync))
-      return;
-
-    Com<D3D11Query, false> query(static_cast<D3D11Query*>(pAsync));
-
-    if (unlikely(!query->IsScoped()))
-      return;
-
-    auto entry = std::find(
-      m_queriesBegun.begin(),
-      m_queriesBegun.end(), query);
-
-    if (unlikely(entry != m_queriesBegun.end()))
-      return;
-
-    EmitCs([cQuery = query]
-    (DxvkContext* ctx) {
-      cQuery->Begin(ctx);
-    });
-
-    m_queriesBegun.push_back(std::move(query));
   }
 
 
   void STDMETHODCALLTYPE D3D11DeferredContext::End(
           ID3D11Asynchronous*         pAsync) {
-    if (unlikely(!pAsync))
-      return;
-
-    Com<D3D11Query, false> query(static_cast<D3D11Query*>(pAsync));
-
-    if (query->IsScoped()) {
-      auto entry = std::find(
-        m_queriesBegun.begin(),
-        m_queriesBegun.end(), query);
-
-      if (likely(entry != m_queriesBegun.end())) {
-        m_queriesBegun.erase(entry);
-      } else {
-        EmitCs([cQuery = query]
-        (DxvkContext* ctx) {
-          cQuery->Begin(ctx);
-        });
-      }
-    }
-
-    m_commandList->AddQuery(query.ptr());
-
-    EmitCs([cQuery = std::move(query)]
-    (DxvkContext* ctx) {
-      cQuery->End(ctx);
-    });
   }
 
 
@@ -154,7 +107,6 @@ namespace dxvk {
   HRESULT STDMETHODCALLTYPE D3D11DeferredContext::FinishCommandList(
           BOOL                RestoreDeferredContextState,
           ID3D11CommandList   **ppCommandList) {
-    FinalizeQueries();
     FlushCsChunk();
     
     if (ppCommandList != nullptr)
@@ -336,20 +288,6 @@ namespace dxvk {
       VkOffset3D { 0, 0, 0 }, levelExtent,
       std::move(dataSlice));
     return S_OK;
-  }
-  
-  
-  void D3D11DeferredContext::FinalizeQueries() {
-    for (auto& query : m_queriesBegun) {
-      m_commandList->AddQuery(query.ptr());
-
-      EmitCs([cQuery = std::move(query)]
-      (DxvkContext* ctx) {
-        cQuery->End(ctx);
-      });
-    }
-
-    m_queriesBegun.clear();
   }
 
 
