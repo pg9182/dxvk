@@ -247,7 +247,7 @@ namespace dxvk {
   
   
   HRESULT STDMETHODCALLTYPE DxgiSwapChain::Present(UINT SyncInterval, UINT Flags) {
-    return Present1(SyncInterval, Flags, nullptr);
+    return S_OK;
   }
   
   
@@ -255,25 +255,7 @@ namespace dxvk {
           UINT                      SyncInterval,
           UINT                      PresentFlags,
     const DXGI_PRESENT_PARAMETERS*  pPresentParameters) {
-
-    if (!IsWindow(m_window))
-      return S_OK;
-    
-    if (SyncInterval > 4)
-      return DXGI_ERROR_INVALID_CALL;
-
-    std::lock_guard<dxvk::recursive_mutex> lockWin(m_lockWindow);
-    std::lock_guard<dxvk::mutex> lockBuf(m_lockBuffer);
-
-    try {
-      HRESULT hr = m_presenter->Present(SyncInterval, PresentFlags, nullptr);
-      if (hr == S_OK && !(PresentFlags & DXGI_PRESENT_TEST))
-        m_presentCount++;
-      return hr;
-    } catch (const DxvkError& err) {
-      Logger::err(err.message());
-      return DXGI_ERROR_DRIVER_INTERNAL_ERROR;
-    }
+    return S_OK;
   }
   
   

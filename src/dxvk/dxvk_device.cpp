@@ -169,20 +169,6 @@ namespace dxvk {
   void DxvkDevice::initResources() {
     m_objects.dummyResources().clearResources(this);
   }
-  
-  
-  void DxvkDevice::presentImage(
-    const Rc<vk::Presenter>&        presenter,
-          DxvkSubmitStatus*         status) {
-    status->result = VK_NOT_READY;
-
-    DxvkPresentInfo presentInfo;
-    presentInfo.presenter = presenter;
-    m_submissionQueue.present(presentInfo, status);
-    
-    std::lock_guard<sync::Spinlock> statLock(m_statLock);
-    m_statCounters.addCtr(DxvkStatCounter::QueuePresentCount, 1);
-  }
 
 
   void DxvkDevice::submitCommandList(

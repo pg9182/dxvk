@@ -6,8 +6,6 @@
 
 #include "../util/thread.h"
 
-#include "../vulkan/vulkan_presenter.h"
-
 #include "dxvk_cmdlist.h"
 
 namespace dxvk {
@@ -36,17 +34,6 @@ namespace dxvk {
     VkSemaphore         waitSync;
     VkSemaphore         wakeSync;
   };
-  
-  
-  /**
-   * \brief Present info
-   *
-   * Stores parameters used to present
-   * a swap chain image on the device.
-   */
-  struct DxvkPresentInfo {
-    Rc<vk::Presenter>   presenter;
-  };
 
 
   /**
@@ -55,7 +42,6 @@ namespace dxvk {
   struct DxvkSubmitEntry {
     DxvkSubmitStatus*   status;
     DxvkSubmitInfo      submit;
-    DxvkPresentInfo     present;
   };
 
 
@@ -124,7 +110,6 @@ namespace dxvk {
      * \returns Status of the operation
      */
     void present(
-            DxvkPresentInfo     presentInfo,
             DxvkSubmitStatus*   status);
     
     /**

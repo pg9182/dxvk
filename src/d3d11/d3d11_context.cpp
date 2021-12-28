@@ -2637,7 +2637,7 @@ namespace dxvk {
 
 
   BOOL STDMETHODCALLTYPE D3D11DeviceContext::IsAnnotationEnabled() {
-    return m_device->instance()->extensions().extDebugUtils;
+    return false;
   }
 
 

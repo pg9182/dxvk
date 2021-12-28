@@ -93,11 +93,8 @@ dxvk_src = files([
   'dxvk_spec_const.cpp',
   'dxvk_staging.cpp',
   'dxvk_stats.cpp',
-  'dxvk_swapchain_blitter.cpp',
   'dxvk_unbound.cpp',
   'dxvk_util.cpp',
-
-  'platform/dxvk_win32_exts.cpp',
 ])
 
 thread_dep = dependency('threads')

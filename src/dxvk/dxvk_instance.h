@@ -88,14 +88,6 @@ namespace dxvk {
     const Config& config() const {
       return m_config;
     }
-
-    /**
-     * \brief Enabled instance extensions
-     * \returns Enabled instance extensions
-     */
-    const DxvkInstanceExtensions& extensions() const {
-      return m_extensions;
-    }
     
   private:
 
@@ -103,9 +95,7 @@ namespace dxvk {
 
     Rc<vk::LibraryFn>       m_vkl;
     Rc<vk::InstanceFn>      m_vki;
-    DxvkInstanceExtensions  m_extensions;
 
-    std::vector<DxvkExtensionProvider*> m_extProviders;
     std::vector<Rc<DxvkAdapter>> m_adapters;
     
     VkInstance createInstance();

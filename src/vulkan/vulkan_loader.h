@@ -3,7 +3,6 @@
 #include "../util/rc/util_rc.h"
 #include "../util/rc/util_rc_ptr.h"
 
-#define VK_USE_PLATFORM_WIN32_KHR 1
 #include <vulkan/vulkan.h>
 
 #define VULKAN_FN(name) \

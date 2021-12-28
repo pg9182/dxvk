@@ -40,18 +40,6 @@ namespace dxvk {
   }
 
 
-  void DxvkSubmissionQueue::present(DxvkPresentInfo presentInfo, DxvkSubmitStatus* status) {
-    std::unique_lock<dxvk::mutex> lock(m_mutex);
-
-    DxvkSubmitEntry entry = { };
-    entry.status  = status;
-    entry.present = std::move(presentInfo);
-
-    m_submitQueue.push(std::move(entry));
-    m_appendCond.notify_all();
-  }
-
-
   void DxvkSubmissionQueue::synchronizeSubmission(
           DxvkSubmitStatus*   status) {
     std::unique_lock<dxvk::mutex> lock(m_mutex);
@@ -107,8 +95,6 @@ namespace dxvk {
           status = entry.submit.cmdList->submit(
             entry.submit.waitSync,
             entry.submit.wakeSync);
-        } else if (entry.present.presenter != nullptr) {
-          status = entry.present.presenter->presentImage();
         }
       } else {
         // Don't submit anything after device loss

@@ -22,8 +22,6 @@
 #include "dxvk_stats.h"
 #include "dxvk_unbound.h"
 
-#include "../vulkan/vulkan_presenter.h"
-
 namespace dxvk {
   
   class DxvkInstance;
@@ -356,19 +354,6 @@ namespace dxvk {
      * and the device is usable.
      */
     void initResources();
-    
-    /**
-     * \brief Presents a swap chain image
-     * 
-     * Invokes the presenter's \c presentImage method on
-     * the submission thread. The status of this operation
-     * can be retrieved with \ref waitForSubmission.
-     * \param [in] presenter The presenter
-     * \param [out] status Present status
-     */
-    void presentImage(
-      const Rc<vk::Presenter>&        presenter,
-            DxvkSubmitStatus*         status);
     
     /**
      * \brief Submits a command list

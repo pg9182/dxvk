@@ -1,7 +1,6 @@
 #include <version.h>
 
 #include "dxvk_instance.h"
-#include "dxvk_platform_exts.h"
 
 #include <algorithm>
 
@@ -14,22 +13,10 @@ namespace dxvk {
     m_config = Config::getUserConfig();
     m_config.logOptions();
 
-    m_extProviders.push_back(&DxvkPlatformExts::s_instance);
-
-    Logger::info("Built-in extension providers:");
-    for (const auto& provider : m_extProviders)
-      Logger::info(str::format("  ", provider->getName()));
-
-    for (const auto& provider : m_extProviders)
-      provider->initInstanceExtensions();
-
     m_vkl = new vk::LibraryFn();
     m_vki = new vk::InstanceFn(true, this->createInstance());
 
     m_adapters = this->queryAdapters();
-
-    for (const auto& provider : m_extProviders)
-      provider->initDeviceExtensions(this);
   }
   
   
@@ -71,39 +58,6 @@ namespace dxvk {
   
   
   VkInstance DxvkInstance::createInstance() {
-    DxvkInstanceExtensions insExtensions;
-
-    std::vector<DxvkExt*> insExtensionList = {{
-      &insExtensions.khrGetSurfaceCapabilities2,
-      &insExtensions.khrSurface,
-    }};
-
-    // Hide VK_EXT_debug_utils behind an environment variable. This extension
-    // adds additional overhead to winevulkan
-    if (env::getEnvVar("DXVK_PERF_EVENTS") == "1") {
-        insExtensionList.push_back(&insExtensions.extDebugUtils);
-    }
-
-    DxvkNameSet extensionsEnabled;
-    DxvkNameSet extensionsAvailable = DxvkNameSet::enumInstanceExtensions(m_vkl);
-    
-    if (!extensionsAvailable.enableExtensions(
-          insExtensionList.size(),
-          insExtensionList.data(),
-          extensionsEnabled))
-      throw DxvkError("DxvkInstance: Failed to create instance");
-
-    m_extensions = insExtensions;
-
-    // Enable additional extensions if necessary
-    for (const auto& provider : m_extProviders)
-      extensionsEnabled.merge(provider->getInstanceExtensions());
-
-    DxvkNameList extensionNameList = extensionsEnabled.toNameList();
-    
-    Logger::info("Enabled instance extensions:");
-    this->logNameList(extensionNameList);
-
     std::string appName = env::getExeName();
     
     VkApplicationInfo appInfo;
@@ -122,8 +76,8 @@ namespace dxvk {
     info.pApplicationInfo         = &appInfo;
     info.enabledLayerCount        = 0;
     info.ppEnabledLayerNames      = nullptr;
-    info.enabledExtensionCount    = extensionNameList.count();
-    info.ppEnabledExtensionNames  = extensionNameList.names();
+    info.enabledExtensionCount    = 0;
+    info.ppEnabledExtensionNames  = nullptr;
     
     VkInstance result = VK_NULL_HANDLE;
     VkResult status = m_vkl->vkCreateInstance(&info, nullptr, &result);
