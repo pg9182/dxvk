@@ -1,5 +1,4 @@
 #include "d3d11_device.h"
-#include "d3d11_gdi.h"
 #include "d3d11_texture.h"
 
 namespace dxvk {
@@ -394,11 +393,7 @@ namespace dxvk {
     if (FAILED(DecodeSampleCount(pDesc->SampleDesc.Count, nullptr)))
       return E_INVALIDARG;
     
-    if ((pDesc->MiscFlags & D3D11_RESOURCE_MISC_GDI_COMPATIBLE)
-     && (pDesc->Usage == D3D11_USAGE_STAGING
-      || (pDesc->Format != DXGI_FORMAT_B8G8R8A8_TYPELESS
-       && pDesc->Format != DXGI_FORMAT_B8G8R8A8_UNORM
-       && pDesc->Format != DXGI_FORMAT_B8G8R8A8_UNORM_SRGB)))
+    if (pDesc->MiscFlags & D3D11_RESOURCE_MISC_GDI_COMPATIBLE)
       return E_INVALIDARG;
 
     if ((pDesc->MiscFlags & D3D11_RESOURCE_MISC_GENERATE_MIPS)
@@ -650,16 +645,11 @@ namespace dxvk {
           ID3D11Resource*     pResource,
           D3D11CommonTexture* pTexture)
   : m_resource  (pResource),
-    m_texture   (pTexture),
-    m_gdiSurface(nullptr) {
-    if (pTexture->Desc()->MiscFlags & D3D11_RESOURCE_MISC_GDI_COMPATIBLE)
-      m_gdiSurface = new D3D11GDISurface(m_resource, 0);
+    m_texture   (pTexture) {
   }
 
   
   D3D11DXGISurface::~D3D11DXGISurface() {
-    if (m_gdiSurface)
-      delete m_gdiSurface;
   }
 
   
@@ -788,19 +778,15 @@ namespace dxvk {
   HRESULT STDMETHODCALLTYPE D3D11DXGISurface::GetDC(
           BOOL                    Discard,
           HDC*                    phdc) {
-    if (!m_gdiSurface)
-      return DXGI_ERROR_INVALID_CALL;
-    
-    return m_gdiSurface->Acquire(Discard, phdc);
+    Logger::stub(__func__);
+    return DXGI_ERROR_INVALID_CALL;
   }
 
 
   HRESULT STDMETHODCALLTYPE D3D11DXGISurface::ReleaseDC(
           RECT*                   pDirtyRect) {
-    if (!m_gdiSurface)
-      return DXGI_ERROR_INVALID_CALL;
-
-    return m_gdiSurface->Release(pDirtyRect);
+    Logger::stub(__func__);
+    return DXGI_ERROR_INVALID_CALL;
   }
 
   
