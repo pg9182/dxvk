@@ -35,8 +35,7 @@ namespace dxvk {
       return S_OK;
     }
     
-    Logger::warn("D3D11DepthStencilView::QueryInterface: Unknown interface query");
-    Logger::warn(str::format(riid));
+    log("warn", str::format(__func__, " Unknown interface query ", riid));
     return E_NOINTERFACE;
   }
   
@@ -104,7 +103,7 @@ namespace dxvk {
       } return S_OK;
         
       default:
-        Logger::err(str::format(
+        log("err", str::format(
           "D3D11: Unsupported dimension for depth stencil view: ",
           resourceDim));
         return E_INVALIDARG;

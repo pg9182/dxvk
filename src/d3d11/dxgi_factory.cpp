@@ -32,8 +32,7 @@ namespace dxvk {
       return S_OK;
     }
     
-    Logger::warn("DxgiFactory::QueryInterface: Unknown interface query");
-    Logger::warn(str::format(riid));
+    log("warn", str::format(__func__, " Unknown interface query ", riid));
     return E_NOINTERFACE;
   }
   
@@ -53,7 +52,7 @@ namespace dxvk {
           HMODULE         Module,
           IDXGIAdapter**  ppAdapter) {
     InitReturnPtr(ppAdapter);
-    Logger::stub(__func__);
+    log("stub", __func__);
     return DXGI_ERROR_UNSUPPORTED;
   }
   
@@ -106,12 +105,17 @@ namespace dxvk {
     
     if (!ppSwapChain || !pDesc || !hWnd || !pDevice)
       return DXGI_ERROR_INVALID_CALL;
+  
+    RECT rect = { };
+    ::GetClientRect(hWnd, &rect);
 
     DXGI_SWAP_CHAIN_DESC1 desc = *pDesc;
     
-    GetWindowClientSize(hWnd,
-      desc.Width  ? nullptr : &desc.Width,
-      desc.Height ? nullptr : &desc.Height);
+    if (desc.Width)
+      desc.Width = rect.right - rect.left;
+    
+    if (desc.Height)
+      desc.Height = rect.bottom - rect.top;
 
     DXGI_SWAP_CHAIN_FULLSCREEN_DESC fsDesc;
     
@@ -145,7 +149,7 @@ namespace dxvk {
           IDXGIOutput*          pRestrictToOutput,
           IDXGISwapChain1**     ppSwapChain) {
     InitReturnPtr(ppSwapChain);
-    Logger::stub(__func__);
+    log("stub", __func__);
     return E_NOTIMPL;
   }
   
@@ -156,7 +160,7 @@ namespace dxvk {
           IDXGIOutput*          pRestrictToOutput,
           IDXGISwapChain1**     ppSwapChain) {
     InitReturnPtr(ppSwapChain);
-    Logger::stub(__func__);
+    log("stub", __func__);
     return E_NOTIMPL;
   }
   
@@ -241,7 +245,7 @@ namespace dxvk {
   HRESULT STDMETHODCALLTYPE DxgiFactory::GetSharedResourceAdapterLuid(
           HANDLE                hResource,
           LUID*                 pLuid) {
-    Logger::stub(__func__);
+    log("stub", __func__);
     return E_NOTIMPL;
   }
   
@@ -260,7 +264,7 @@ namespace dxvk {
           HWND                  WindowHandle,
           UINT                  wMsg,
           DWORD*                pdwCookie) {
-    Logger::stub(__func__);
+    log("stub", __func__);
     return E_NOTIMPL;
   }
   
@@ -268,7 +272,7 @@ namespace dxvk {
   HRESULT STDMETHODCALLTYPE DxgiFactory::RegisterStereoStatusEvent(
           HANDLE                hEvent,
           DWORD*                pdwCookie) {
-    Logger::stub(__func__);
+    log("stub", __func__);
     return E_NOTIMPL;
   }
   
@@ -277,7 +281,7 @@ namespace dxvk {
           HWND                  WindowHandle,
           UINT                  wMsg,
           DWORD*                pdwCookie) {
-    Logger::stub(__func__);
+    log("stub", __func__);
     return E_NOTIMPL;
   }
   
@@ -285,7 +289,7 @@ namespace dxvk {
   HRESULT STDMETHODCALLTYPE DxgiFactory::RegisterOcclusionStatusEvent(
           HANDLE                hEvent,
           DWORD*                pdwCookie) {
-    Logger::stub(__func__);
+    log("stub", __func__);
     return E_NOTIMPL;
   }
   
@@ -316,14 +320,14 @@ namespace dxvk {
   HRESULT STDMETHODCALLTYPE DxgiFactory::RegisterAdaptersChangedEvent(
           HANDLE                hEvent,
           DWORD*                pdwCookie) {
-    Logger::stub(__func__);
+    log("stub", __func__);
     return E_NOTIMPL;
   }
 
 
   HRESULT STDMETHODCALLTYPE DxgiFactory::UnregisterAdaptersChangedEvent(
           DWORD                 Cookie) {
-    Logger::stub(__func__);
+    log("stub", __func__);
     return E_NOTIMPL;
   }
 

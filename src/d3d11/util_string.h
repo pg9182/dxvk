@@ -4,7 +4,7 @@
 #include <sstream>
 #include <vector>
 
-#include "./com/com_include.h"
+#include "com_include.h"
 
 namespace dxvk::str {
   

@@ -48,8 +48,7 @@ namespace dxvk {
       return S_OK;
     }
     
-    Logger::warn("D3D11SwapChain::QueryInterface: Unknown interface query");
-    Logger::warn(str::format(riid));
+    log("warn", str::format(__func__, " Unknown interface query ", riid));
     return E_NOINTERFACE;
   }
   
@@ -125,14 +124,14 @@ namespace dxvk {
   
   HRESULT STDMETHODCALLTYPE D3D11SwapChain::GetBackgroundColor(
           DXGI_RGBA*                pColor) {
-    Logger::stub(__func__);
+    log("stub", __func__);
     return E_NOTIMPL;
   }
   
   
   HRESULT STDMETHODCALLTYPE D3D11SwapChain::GetRotation(
           DXGI_MODE_ROTATION*       pRotation) {
-    Logger::stub(__func__);
+    log("stub", __func__);
     return E_NOTIMPL;
   }
   
@@ -140,7 +139,7 @@ namespace dxvk {
   HRESULT STDMETHODCALLTYPE D3D11SwapChain::GetRestrictToOutput(
           IDXGIOutput**             ppRestrictToOutput) {
     InitReturnPtr(ppRestrictToOutput);
-    Logger::stub(__func__);
+    log("stub", __func__);
     return E_NOTIMPL;
   }
   
@@ -193,7 +192,7 @@ namespace dxvk {
           REFIID                    refiid,
           void**                    ppUnk) {
     InitReturnPtr(ppUnk);
-    Logger::stub(__func__);
+    log("stub", __func__);
     return E_NOTIMPL;
   }
   
@@ -276,14 +275,14 @@ namespace dxvk {
   
   
   HANDLE STDMETHODCALLTYPE D3D11SwapChain::GetFrameLatencyWaitableObject() {
-    Logger::stub(__func__);
+    log("stub", __func__);
     return nullptr;
   }
 
 
   HRESULT STDMETHODCALLTYPE D3D11SwapChain::GetMatrixTransform(
           DXGI_MATRIX_3X2_F*        pMatrix) {
-    Logger::stub(__func__);
+    log("stub", __func__);
     return DXGI_ERROR_INVALID_CALL;
   }
 
@@ -308,7 +307,7 @@ namespace dxvk {
   
   HRESULT STDMETHODCALLTYPE D3D11SwapChain::SetMatrixTransform(
     const DXGI_MATRIX_3X2_F*        pMatrix) {
-    Logger::stub(__func__);
+    log("stub", __func__);
     return DXGI_ERROR_INVALID_CALL;
   }
 
@@ -359,10 +358,6 @@ namespace dxvk {
 
 
   void D3D11SwapChain::CreateBackBuffer() {
-    Logger::info("created a back buffer, but won't actually render anything to it");
-
-    // Explicitly destroy current swap image before
-    // creating a new one to free up resources
     if (m_backBuffer)
       m_backBuffer->ReleasePrivate();
 

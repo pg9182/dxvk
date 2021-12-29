@@ -4,7 +4,7 @@
 
 #include "com_include.h"
 
-#include "../util_likely.h"
+#include "util_likely.h"
   
 namespace dxvk {
   

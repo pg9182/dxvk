@@ -145,14 +145,14 @@ namespace dxvk {
   HRESULT STDMETHODCALLTYPE D3D11DXGISurface::GetDC(
           BOOL                    Discard,
           HDC*                    phdc) {
-    Logger::stub(__func__);
+    log("stub", __func__);
     return DXGI_ERROR_INVALID_CALL;
   }
 
 
   HRESULT STDMETHODCALLTYPE D3D11DXGISurface::ReleaseDC(
           RECT*                   pDirtyRect) {
-    Logger::stub(__func__);
+    log("stub", __func__);
     return DXGI_ERROR_INVALID_CALL;
   }
 
@@ -214,8 +214,7 @@ namespace dxvk {
        return S_OK;
     }
     
-    Logger::warn("D3D11Texture1D::QueryInterface: Unknown interface query");
-    Logger::warn(str::format(riid));
+    log("warn", str::format(__func__, " Unknown interface query ", riid));
     return E_NOINTERFACE;
   }
   
@@ -231,10 +230,6 @@ namespace dxvk {
   
   
   void STDMETHODCALLTYPE D3D11Texture1D::SetEvictionPriority(UINT EvictionPriority) {
-    static bool s_errorShown = false;
-
-    if (!std::exchange(s_errorShown, true))
-      Logger::warn("D3D11Texture1D::SetEvictionPriority: Stub");
   }
   
   
@@ -297,8 +292,7 @@ namespace dxvk {
        return S_OK;
     }
     
-    Logger::warn("D3D11Texture2D::QueryInterface: Unknown interface query");
-    Logger::warn(str::format(riid));
+    log("warn", str::format(__func__, " Unknown interface query ", riid));
     return E_NOINTERFACE;
   }
   
@@ -385,8 +379,7 @@ namespace dxvk {
        return S_OK;
     }
     
-    Logger::warn("D3D11Texture3D::QueryInterface: Unknown interface query");
-    Logger::warn(str::format(riid));
+    log("warn", str::format(__func__, " Unknown interface query ", riid));
     return E_NOINTERFACE;
   }
   

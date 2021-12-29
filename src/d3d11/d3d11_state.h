@@ -1,6 +1,8 @@
 #pragma once
 
 #include <unordered_map>
+#include <mutex>
+#include <thread>
 
 #include "d3d11_blend.h"
 #include "d3d11_depth_stencil.h"
@@ -37,7 +39,7 @@ namespace dxvk {
   public:
 
     T* Create(D3D11Device* device, const DescType& desc) {
-      std::lock_guard<dxvk::mutex> lock(m_mutex);
+      std::lock_guard<std::mutex> lock(m_mutex);
       
       auto entry = m_objects.find(desc);
       
@@ -53,7 +55,7 @@ namespace dxvk {
     
   private:
     
-    dxvk::mutex                                m_mutex;
+    std::mutex                                m_mutex;
     std::unordered_map<DescType, T,
       D3D11StateDescHash, D3D11StateDescEqual> m_objects;
     

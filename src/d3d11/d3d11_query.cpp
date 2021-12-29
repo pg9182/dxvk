@@ -37,8 +37,8 @@ namespace dxvk {
       }
     }
     
-    Logger::warn("D3D11Query: Unknown interface query");
-    Logger::warn(str::format(riid));
+    log("warn", "D3D11Query: Unknown interface query");
+    log("warn", str::format(riid));
     return E_NOINTERFACE;
   }
   
@@ -78,7 +78,7 @@ namespace dxvk {
         return sizeof(BOOL);
     }
     
-    Logger::err("D3D11Query: Failed to query data size");
+    log("err", "D3D11Query: Failed to query data size");
     return 0;
   }
   
@@ -145,7 +145,7 @@ namespace dxvk {
         } return S_OK;
 
         default:
-          Logger::err(str::format("D3D11: Unhandled query type in GetData: ", m_desc.Query));
+          log("err", str::format("D3D11: Unhandled query type in GetData: ", m_desc.Query));
           return E_INVALIDARG;
       }
     }

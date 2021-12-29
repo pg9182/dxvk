@@ -37,8 +37,7 @@ namespace dxvk {
       return S_OK;
     }
   
-    Logger::warn("D3D11DeviceContext::QueryInterface: Unknown interface query");
-    Logger::warn(str::format(riid));
+    log("warn", str::format(__func__, " Unknown interface query ", riid));
     return E_NOINTERFACE;
   }
   
@@ -850,7 +849,7 @@ namespace dxvk {
     auto shader = static_cast<D3D11GeometryShader*>(pShader);
     
     if (NumClassInstances != 0)
-      Logger::err("D3D11: Class instances not supported");
+      log("err", "D3D11: Class instances not supported");
     
     if (m_state.gs.shader != shader) {
       m_state.gs.shader = shader;

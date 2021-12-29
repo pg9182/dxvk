@@ -2,7 +2,7 @@
 
 #include "dxgi_object.h"
 
-#include "../util/com/com_private_data.h"
+#include "com_private_data.h"
 
 #include "d3d11_cmdlist.h"
 #include "d3d11_shader.h"

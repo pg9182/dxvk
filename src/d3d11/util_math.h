@@ -30,10 +30,5 @@ namespace dxvk {
     return std::fmin(
       std::fmax(value, min), max);
   }
-
-  template<typename T>
-  inline T divCeil(T dividend, T divisor) {
-    return (dividend + divisor - 1) / divisor;
-  }
   
 }

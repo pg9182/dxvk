@@ -25,7 +25,7 @@ namespace dxvk {
         return S_OK;
       }
       
-      Logger::warn("D3D11Shader::QueryInterface: Unknown interface query");
+      log("warn", str::format(__func__, " Unknown interface query ", riid));
       return E_NOINTERFACE;
     }
     

@@ -2,7 +2,7 @@
 
 #include "d3d11_include.h"
 
-#include "../util/com/com_private_data.h"
+#include "com_private_data.h"
 
 namespace dxvk {
 

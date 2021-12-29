@@ -2,8 +2,6 @@
 #include "dxgi_factory.h"
 #include "dxgi_output.h"
 
-#include "../util/util_luid.h"
-
 namespace dxvk {
 
   DxgiAdapter::DxgiAdapter(
@@ -45,8 +43,7 @@ namespace dxvk {
       return S_OK;
     }
     
-    Logger::warn("DxgiAdapter::QueryInterface: Unknown interface query");
-    Logger::warn(str::format(riid));
+    log("warn", str::format(__func__, " Unknown interface query ", riid));
     return E_NOINTERFACE;
   }
   
@@ -82,8 +79,6 @@ namespace dxvk {
   HRESULT STDMETHODCALLTYPE DxgiAdapter::GetDesc(DXGI_ADAPTER_DESC* pDesc) {
     if (pDesc == nullptr)
       return E_INVALIDARG;
-
-    Logger::info("returned fake adapter desc");
     
     *pDesc = (DXGI_ADAPTER_DESC){
       .VendorId              = 0x10DE,
@@ -104,7 +99,7 @@ namespace dxvk {
     if (pDesc == nullptr)
       return E_INVALIDARG;
     
-    Logger::stub(__func__);
+    log("stub", __func__);
     return E_NOTIMPL;
   }
   
@@ -113,7 +108,7 @@ namespace dxvk {
     if (pDesc == nullptr)
       return E_INVALIDARG;
     
-    Logger::stub(__func__);
+    log("stub", __func__);
     return E_NOTIMPL;
   }
   
@@ -123,7 +118,7 @@ namespace dxvk {
     if (pDesc == nullptr)
       return E_INVALIDARG;
     
-    Logger::stub(__func__);
+    log("stub", __func__);
     return E_NOTIMPL;
   }
 
@@ -139,7 +134,7 @@ namespace dxvk {
      && MemorySegmentGroup != DXGI_MEMORY_SEGMENT_GROUP_NON_LOCAL)
       return E_INVALIDARG;
     
-    Logger::stub(__func__);
+    log("stub", __func__);
     return E_NOTIMPL;
   }
 

@@ -82,7 +82,7 @@ namespace dxvk {
   HRESULT STDMETHODCALLTYPE D3D11DXGIResource::GetSharedHandle(
           HANDLE*                 pSharedHandle) {
     InitReturnPtr(pSharedHandle);
-    Logger::err("D3D11DXGIResource::GetSharedHandle: Stub");
+    log("err", "D3D11DXGIResource::GetSharedHandle: Stub");
     return E_NOTIMPL;
   }
 
@@ -133,7 +133,7 @@ namespace dxvk {
           LPCWSTR                 lpName,
           HANDLE*                 pHandle) {
     InitReturnPtr(pHandle);
-    Logger::err("D3D11DXGIResource::CreateSharedHandle: Stub");
+    log("err", "D3D11DXGIResource::CreateSharedHandle: Stub");
     return E_NOTIMPL;
   }
 
@@ -142,7 +142,7 @@ namespace dxvk {
           UINT                    index,
           IDXGISurface2**         ppSurface) {
     InitReturnPtr(ppSurface);
-    Logger::err("D3D11DXGIResource::CreateSubresourceSurface: Stub");
+    log("err", "D3D11DXGIResource::CreateSubresourceSurface: Stub");
     return E_NOTIMPL;
   }
   

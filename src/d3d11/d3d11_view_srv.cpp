@@ -36,8 +36,7 @@ namespace dxvk {
       return S_OK;
     }
     
-    Logger::warn("D3D11ShaderResourceView::QueryInterface: Unknown interface query");
-    Logger::warn(str::format(riid));
+    log("warn", str::format(__func__, " Unknown interface query ", riid));
     return E_NOINTERFACE;
   }
   
@@ -192,7 +191,7 @@ namespace dxvk {
       } return S_OK;
       
       default:
-        Logger::err(str::format(
+        log("err", str::format(
           "D3D11: Unsupported dimension for shader resource view: ",
           resourceDim));
         return E_INVALIDARG;
