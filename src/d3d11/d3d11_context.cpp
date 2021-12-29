@@ -1,5 +1,3 @@
-#include <cstring>
-
 #include "d3d11_context.h"
 #include "d3d11_device.h"
 #include "d3d11_query.h"
@@ -1325,8 +1323,11 @@ namespace dxvk {
     if (ppBlendState != nullptr)
       *ppBlendState = ref(m_state.om.cbState);
     
-    if (BlendFactor != nullptr)
-      std::memcpy(BlendFactor, m_state.om.blendFactor, sizeof(FLOAT) * 4);
+    if (BlendFactor != nullptr) {
+      for (uint32_t i = 0; i < 4; i++) {
+        BlendFactor[i] = m_state.om.blendFactor[i];
+      }
+    }
     
     if (pSampleMask != nullptr)
       *pSampleMask = m_state.om.sampleMask;

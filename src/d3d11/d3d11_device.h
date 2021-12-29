@@ -1,12 +1,7 @@
 #pragma once
 
-#include <mutex>
-#include <vector>
-
 #include "../dxgi/dxgi_object.h"
 #include "../dxgi/dxgi_interfaces.h"
-
-#include "../dxvk/dxvk_cs.h"
 
 #include "../util/com/com_private_data.h"
 
@@ -376,40 +371,6 @@ namespace dxvk {
 
     void STDMETHODCALLTYPE UnregisterDeviceRemoved(
             DWORD                     dwCookie);
-
-    Rc<DxvkDevice> GetDXVKDevice() {
-      return m_dxvkDevice;
-    }
-    
-    VkPipelineStageFlags GetEnabledShaderStages() const {
-      return m_dxvkDevice->getShaderPipelineStages();
-    }
-    
-    DXGI_VK_FORMAT_INFO LookupFormat(
-            DXGI_FORMAT           Format,
-            DXGI_VK_FORMAT_MODE   Mode) const;
-    
-    DXGI_VK_FORMAT_INFO LookupPackedFormat(
-            DXGI_FORMAT           Format,
-            DXGI_VK_FORMAT_MODE   Mode) const;
-    
-    DXGI_VK_FORMAT_FAMILY LookupFamily(
-            DXGI_FORMAT           Format,
-            DXGI_VK_FORMAT_MODE   Mode) const;
-    
-    DxvkCsChunkRef AllocCsChunk(DxvkCsChunkFlags flags) {
-      DxvkCsChunk* chunk = m_csChunkPool.allocChunk(flags);
-      return DxvkCsChunkRef(chunk, &m_csChunkPool);
-    }
-    
-    static bool CheckFeatureLevelSupport(
-      const Rc<DxvkInstance>& instance,
-      const Rc<DxvkAdapter>&  adapter,
-            D3D_FEATURE_LEVEL featureLevel);
-    
-    static DxvkDeviceFeatures GetDeviceFeatures(
-      const Rc<DxvkAdapter>&  adapter,
-            D3D_FEATURE_LEVEL featureLevel);
     
   private:
     
@@ -417,13 +378,6 @@ namespace dxvk {
 
     D3D_FEATURE_LEVEL               m_featureLevel;
     UINT                            m_featureFlags;
-    
-    const Rc<DxvkDevice>            m_dxvkDevice;
-    const Rc<DxvkAdapter>           m_dxvkAdapter;
-    
-    const DXGIVkFormatTable         m_d3d11Formats;
-    
-    DxvkCsChunkPool                 m_csChunkPool;
 
     Com<D3D11ImmediateContext, false> m_context;
 
@@ -432,24 +386,8 @@ namespace dxvk {
     D3D11StateObjectSet<D3D11RasterizerState>   m_rsStateObjects;
     D3D11StateObjectSet<D3D11SamplerState>      m_samplerObjects;
     
-    HRESULT GetFormatSupportFlags(
-            DXGI_FORMAT Format,
-            UINT*       pFlags1,
-            UINT*       pFlags2) const;
-    
-    BOOL GetImageTypeSupport(
-            VkFormat    Format,
-            VkImageType Type) const;
-    
-    static D3D_FEATURE_LEVEL GetMaxFeatureLevel(
-      const Rc<DxvkInstance>&           pInstance);
-    
   };
 
-
-  /**
-   * \brief DXGI swap chain factory
-   */
   class WineDXGISwapChainFactory : public IWineDXGISwapChainFactory {
     
   public:
@@ -480,52 +418,14 @@ namespace dxvk {
     D3D11Device*     m_device;
     
   };
-  
-
-  /**
-   * \brief D3D11 device metadata shenanigans
-   */
-  class DXGIDXVKDevice : public IDXGIDXVKDevice {
-
-  public:
-
-    DXGIDXVKDevice(D3D11DXGIDevice* pContainer);
-    
-    ULONG STDMETHODCALLTYPE AddRef();
-    
-    ULONG STDMETHODCALLTYPE Release();
-    
-    HRESULT STDMETHODCALLTYPE QueryInterface(
-            REFIID                  riid,
-            void**                  ppvObject);
-
-    void STDMETHODCALLTYPE SetAPIVersion(
-              UINT                    Version);
-
-    UINT STDMETHODCALLTYPE GetAPIVersion();
-
-  private:
-
-    D3D11DXGIDevice* m_container;
-    UINT             m_apiVersion;
-
-  };
 
 
-  /**
-   * \brief D3D11 device container
-   * 
-   * Stores all the objects that contribute to the D3D11
-   * device implementation, including the DXGI device.
-   */
   class D3D11DXGIDevice : public DxgiObject<IDXGIDevice4> {
     constexpr static uint32_t DefaultFrameLatency = 3;
   public:
     
     D3D11DXGIDevice(
             IDXGIAdapter*       pAdapter,
-      const Rc<DxvkInstance>&   pDxvkInstance,
-      const Rc<DxvkAdapter>&    pDxvkAdapter,
             D3D_FEATURE_LEVEL   FeatureLevel,
             UINT                FeatureFlags);
     
@@ -589,27 +489,14 @@ namespace dxvk {
         
     HRESULT STDMETHODCALLTYPE EnqueueSetEvent( 
             HANDLE                hEvent) final;
-    
+
     void STDMETHODCALLTYPE Trim() final;
-    
-    Rc<DxvkDevice> STDMETHODCALLTYPE GetDXVKDevice();
 
   private:
 
-    Com<IDXGIAdapter>   m_dxgiAdapter;
-
-    Rc<DxvkInstance>    m_dxvkInstance;
-    Rc<DxvkAdapter>     m_dxvkAdapter;
-    Rc<DxvkDevice>      m_dxvkDevice;
-
-    D3D11Device         m_d3d11Device;
-    DXGIDXVKDevice      m_metaDevice;
-    
+    Com<IDXGIAdapter>        m_dxgiAdapter;
+    D3D11Device              m_d3d11Device;
     WineDXGISwapChainFactory m_wineFactory;
-    
-    uint32_t m_frameLatency = DefaultFrameLatency;
-
-    Rc<DxvkDevice> CreateDevice(D3D_FEATURE_LEVEL FeatureLevel);
 
   };
   

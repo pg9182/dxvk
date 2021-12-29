@@ -1,5 +1,3 @@
-#include <array>
-
 #include "../dxgi/dxgi_adapter.h"
 
 #include "../dxvk/dxvk_instance.h"
@@ -8,19 +6,6 @@
 
 namespace dxvk {
   Logger Logger::s_instance("d3d11.log");
-}
-
-std::ostream& operator << (std::ostream& os, D3D_FEATURE_LEVEL e) {
-  switch (e) {
-    ENUM_NAME(D3D_FEATURE_LEVEL_9_1);
-    ENUM_NAME(D3D_FEATURE_LEVEL_9_2);
-    ENUM_NAME(D3D_FEATURE_LEVEL_9_3);
-    ENUM_NAME(D3D_FEATURE_LEVEL_10_0);
-    ENUM_NAME(D3D_FEATURE_LEVEL_10_1);
-    ENUM_NAME(D3D_FEATURE_LEVEL_11_0);
-    ENUM_NAME(D3D_FEATURE_LEVEL_11_1);
-    ENUM_DEFAULT(e);
-  }
 }
   
 extern "C" {
@@ -61,28 +46,20 @@ extern "C" {
       if (dxvkAdapter == nullptr)
         return E_FAIL;
     }
-    
-    // Feature levels to probe if the
-    // application does not specify any.
-    std::array<D3D_FEATURE_LEVEL, 6> defaultFeatureLevels = {
-      D3D_FEATURE_LEVEL_11_0, D3D_FEATURE_LEVEL_10_1,
-      D3D_FEATURE_LEVEL_10_0, D3D_FEATURE_LEVEL_9_3,
-      D3D_FEATURE_LEVEL_9_2,  D3D_FEATURE_LEVEL_9_1,
+
+    D3D_FEATURE_LEVEL defaultFeatureLevels[] = {
+      D3D_FEATURE_LEVEL_11_0,
     };
     
     if (pFeatureLevels == nullptr || FeatureLevels == 0) {
-      pFeatureLevels = defaultFeatureLevels.data();
-      FeatureLevels  = defaultFeatureLevels.size();
+      pFeatureLevels = defaultFeatureLevels,
+      FeatureLevels  = sizeof(defaultFeatureLevels) / sizeof(*defaultFeatureLevels);
     }
-    
-    // Find the highest feature level supported by the device.
-    // This works because the feature level array is ordered.
+
     UINT flId;
 
     for (flId = 0 ; flId < FeatureLevels; flId++) {
-      Logger::info(str::format("D3D11CoreCreateDevice: Probing ", pFeatureLevels[flId]));
-      
-      if (D3D11Device::CheckFeatureLevelSupport(dxvkInstance, dxvkAdapter, pFeatureLevels[flId]))
+      if (pFeatureLevels[flId] == D3D_FEATURE_LEVEL_11_1 || pFeatureLevels[flId] == D3D_FEATURE_LEVEL_11_0)
         break;
     }
     
@@ -93,19 +70,9 @@ extern "C" {
     
     // Try to create the device with the given parameters.
     const D3D_FEATURE_LEVEL fl = pFeatureLevels[flId];
-    
-    try {
-      Logger::info(str::format("D3D11CoreCreateDevice: Using feature level ", fl));
-      Com<D3D11DXGIDevice> device = new D3D11DXGIDevice(
-        pAdapter, dxvkInstance, dxvkAdapter, fl, Flags);
-      
-      return device->QueryInterface(
-        __uuidof(ID3D11Device),
-        reinterpret_cast<void**>(ppDevice));
-    } catch (const DxvkError& e) {
-      Logger::err("D3D11CoreCreateDevice: Failed to create D3D11 device");
-      return E_FAIL;
-    }
+
+    Com<D3D11DXGIDevice> device = new D3D11DXGIDevice(pAdapter, fl, Flags);
+    return device->QueryInterface(__uuidof(ID3D11Device), reinterpret_cast<void**>(ppDevice));
   }
   
   
