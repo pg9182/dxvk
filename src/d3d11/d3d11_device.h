@@ -11,7 +11,6 @@
 #include "../util/com/com_private_data.h"
 
 #include "d3d11_cmdlist.h"
-#include "d3d11_initializer.h"
 #include "d3d11_shader.h"
 #include "d3d11_state.h"
 #include "d3d11_util.h"
@@ -382,8 +381,6 @@ namespace dxvk {
       return m_dxvkDevice;
     }
     
-    void FlushInitContext();
-    
     VkPipelineStageFlags GetEnabledShaderStages() const {
       return m_dxvkDevice->getShaderPipelineStages();
     }
@@ -427,8 +424,7 @@ namespace dxvk {
     const DXGIVkFormatTable         m_d3d11Formats;
     
     DxvkCsChunkPool                 m_csChunkPool;
-    
-    D3D11Initializer*               m_initializer = nullptr;
+
     Com<D3D11ImmediateContext, false> m_context;
 
     D3D11StateObjectSet<D3D11BlendState>        m_bsStateObjects;

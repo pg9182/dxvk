@@ -37,14 +37,12 @@ namespace dxvk {
     m_dxvkDevice    (pContainer->GetDXVKDevice()),
     m_dxvkAdapter   (m_dxvkDevice->adapter()),
     m_d3d11Formats  (m_dxvkAdapter) {
-    m_initializer = new D3D11Initializer(this);
     m_context     = new D3D11ImmediateContext(this, m_dxvkDevice);
   }
   
   
   D3D11Device::~D3D11Device() {
     m_context = nullptr;
-    delete m_initializer;
   }
   
   
@@ -71,25 +69,13 @@ namespace dxvk {
     
     if (!pDesc)
       return E_INVALIDARG;
-    
-    D3D11_BUFFER_DESC desc = *pDesc;
-    HRESULT hr = D3D11Buffer::NormalizeBufferProperties(&desc);
-
-    if (FAILED(hr))
-      return hr;
 
     if (!ppBuffer)
       return S_FALSE;
     
-    try {
-      const Com<D3D11Buffer> buffer = new D3D11Buffer(this, &desc);
-      m_initializer->InitBuffer(buffer.ptr(), pInitialData);
-      *ppBuffer = buffer.ref();
-      return S_OK;
-    } catch (const DxvkError& e) {
-      Logger::err(e.message());
-      return E_INVALIDARG;
-    }
+    const Com<D3D11Buffer> buffer = new D3D11Buffer(this, pDesc);
+    *ppBuffer = buffer.ref();
+    return S_OK;
   }
   
   
@@ -1420,11 +1406,6 @@ namespace dxvk {
           DXGI_FORMAT           Format,
           DXGI_VK_FORMAT_MODE   Mode) const {
     return m_d3d11Formats.GetFormatFamily(Format, Mode);
-  }
-  
-  
-  void D3D11Device::FlushInitContext() {
-    m_initializer->Flush();
   }
   
   
