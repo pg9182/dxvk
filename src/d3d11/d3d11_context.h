@@ -703,8 +703,6 @@ namespace dxvk {
     D3D11ContextState           m_state;
     D3D11CmdData*               m_cmdData;
     
-    void ApplyInputLayout();
-    
     void ApplyPrimitiveTopology();
     
     void ApplyBlendFactor();

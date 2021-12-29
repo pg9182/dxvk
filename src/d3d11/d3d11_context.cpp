@@ -1317,21 +1317,7 @@ namespace dxvk {
   
   void STDMETHODCALLTYPE D3D11DeviceContext::IASetInputLayout(ID3D11InputLayout* pInputLayout) {    
     auto inputLayout = static_cast<D3D11InputLayout*>(pInputLayout);
-    
-    if (m_state.ia.inputLayout != inputLayout) {
-      bool equal = false;
-      
-      // Some games (e.g. Grim Dawn) create lots and lots of
-      // identical input layouts, so we'll only apply the state
-      // if the input layouts has actually changed between calls.
-      if (m_state.ia.inputLayout != nullptr && inputLayout != nullptr)
-        equal = m_state.ia.inputLayout->Compare(inputLayout);
-      
-      m_state.ia.inputLayout = inputLayout;
-      
-      if (!equal)
-        ApplyInputLayout();
-    }
+    m_state.ia.inputLayout = inputLayout;
   }
   
   
@@ -2621,23 +2607,6 @@ namespace dxvk {
   }
   
   
-  void D3D11DeviceContext::ApplyInputLayout() {
-    auto inputLayout = m_state.ia.inputLayout.prvRef();
-
-    if (likely(inputLayout != nullptr)) {
-      EmitCs([
-        cInputLayout = std::move(inputLayout)
-      ] (DxvkContext* ctx) {
-        cInputLayout->BindToContext(ctx);
-      });
-    } else {
-      EmitCs([] (DxvkContext* ctx) {
-        ctx->setInputLayout(0, nullptr, 0, nullptr);
-      });
-    }
-  }
-  
-  
   void D3D11DeviceContext::ApplyPrimitiveTopology() {
     D3D11_PRIMITIVE_TOPOLOGY topology = m_state.ia.primitiveTopology;
     DxvkInputAssemblyState iaState = { };
@@ -3565,8 +3534,7 @@ namespace dxvk {
     BindShader<DxbcProgramType::GeometryShader> (GetCommonShader(m_state.gs.shader.ptr()));
     BindShader<DxbcProgramType::PixelShader>    (GetCommonShader(m_state.ps.shader.ptr()));
     BindShader<DxbcProgramType::ComputeShader>  (GetCommonShader(m_state.cs.shader.ptr()));
-    
-    ApplyInputLayout();
+
     ApplyPrimitiveTopology();
     ApplyBlendFactor();
 
