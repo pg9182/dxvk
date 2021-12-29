@@ -8,44 +8,10 @@ namespace dxvk {
     const D3D11_RASTERIZER_DESC2&         desc)
   : D3D11StateObject<ID3D11RasterizerState2>(device),
     m_desc(desc) {
-    // Polygon mode. Determines whether the rasterizer fills
-    // a polygon or renders lines connecting the vertices.
-    switch (desc.FillMode) {
-      default:
-      case D3D11_FILL_SOLID:     m_state.polygonMode = VK_POLYGON_MODE_FILL; break;
-      case D3D11_FILL_WIREFRAME: m_state.polygonMode = VK_POLYGON_MODE_LINE; break;
-    }
-    
-    // Face culling properties. The rasterizer may discard
-    // polygons that are facing towards or away from the
-    // viewer, depending on the options below.
-    switch (desc.CullMode) {
-      default:
-      case D3D11_CULL_NONE:  m_state.cullMode = VK_CULL_MODE_NONE;      break;
-      case D3D11_CULL_FRONT: m_state.cullMode = VK_CULL_MODE_FRONT_BIT; break;
-      case D3D11_CULL_BACK:  m_state.cullMode = VK_CULL_MODE_BACK_BIT;  break;
-    }
-    
-    m_state.frontFace = desc.FrontCounterClockwise
-      ? VK_FRONT_FACE_COUNTER_CLOCKWISE
-      : VK_FRONT_FACE_CLOCKWISE;
-    
-    // In the backend we treat depth bias as a dynamic state because
-    // some games like to put random/uninitialized numbers here, but
-    // we do not need to enable it in case the parameters are both 0.
-    m_state.depthBiasEnable   = desc.DepthBias != 0 || desc.SlopeScaledDepthBias != 0.0f;
-    m_state.depthClipEnable   = desc.DepthClipEnable;
-    m_state.conservativeMode  = DecodeConservativeRasterizationMode(desc.ConservativeRaster);
-    m_state.sampleCount       = VkSampleCountFlags(desc.ForcedSampleCount);
-
-    m_depthBias.depthBiasConstant = float(desc.DepthBias);
-    m_depthBias.depthBiasSlope    = desc.SlopeScaledDepthBias;
-    m_depthBias.depthBiasClamp    = desc.DepthBiasClamp;
   }
   
   
   D3D11RasterizerState::~D3D11RasterizerState() {
-    
   }
 
 
@@ -102,15 +68,6 @@ namespace dxvk {
   void STDMETHODCALLTYPE D3D11RasterizerState::GetDesc2(D3D11_RASTERIZER_DESC2* pDesc) {
     *pDesc = m_desc;
   }
-
-  
-  void D3D11RasterizerState::BindToContext(const Rc<DxvkContext>& ctx) {
-    ctx->setRasterizerState(m_state);
-    
-    if (m_state.depthBiasEnable)
-      ctx->setDepthBias(m_depthBias);
-  }
-  
   
   D3D11_RASTERIZER_DESC2 D3D11RasterizerState::PromoteDesc(
     const D3D11_RASTERIZER_DESC*  pSrcDesc) {
@@ -130,7 +87,6 @@ namespace dxvk {
     return dstDesc;
   }
   
-  
   D3D11_RASTERIZER_DESC2 D3D11RasterizerState::PromoteDesc(
     const D3D11_RASTERIZER_DESC1*  pSrcDesc) {
     D3D11_RASTERIZER_DESC2 dstDesc;
@@ -147,40 +103,6 @@ namespace dxvk {
     dstDesc.ForcedSampleCount     = 0;
     dstDesc.ConservativeRaster    = D3D11_CONSERVATIVE_RASTERIZATION_MODE_OFF;
     return dstDesc;
-  }
-  
-  
-  HRESULT D3D11RasterizerState::NormalizeDesc(
-          D3D11_RASTERIZER_DESC2* pDesc) {
-    if (pDesc->FillMode < D3D11_FILL_WIREFRAME
-     || pDesc->FillMode > D3D11_FILL_SOLID)
-      return E_INVALIDARG;
-    
-    if (pDesc->CullMode < D3D11_CULL_NONE
-     || pDesc->CullMode > D3D11_CULL_BACK)
-      return E_INVALIDARG;
-    
-    if (pDesc->FrontCounterClockwise)
-      pDesc->FrontCounterClockwise = TRUE;
-    
-    if (pDesc->DepthClipEnable)
-      pDesc->DepthClipEnable = TRUE;
-    
-    if (pDesc->ScissorEnable)
-      pDesc->ScissorEnable = TRUE;
-    
-    if (pDesc->MultisampleEnable)
-      pDesc->MultisampleEnable = TRUE;
-    
-    if (pDesc->AntialiasedLineEnable)
-      pDesc->AntialiasedLineEnable = TRUE;
-    
-    if (pDesc->ForcedSampleCount != 0) {
-      if (FAILED(DecodeSampleCount(pDesc->ForcedSampleCount, nullptr)))
-        return E_INVALIDARG;
-    }
-
-    return S_OK;
   }
   
 }

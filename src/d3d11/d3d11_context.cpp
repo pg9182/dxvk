@@ -2341,9 +2341,6 @@ namespace dxvk {
           ID3D11BlendState*                 pBlendState,
     const FLOAT                             BlendFactor[4],
           UINT                              SampleMask) {    
-    auto blendState = static_cast<D3D11BlendState*>(pBlendState);
-
-    
     if (BlendFactor != nullptr) {
       for (uint32_t i = 0; i < 4; i++)
         m_state.om.blendFactor[i] = BlendFactor[i];
@@ -2434,53 +2431,13 @@ namespace dxvk {
   
   void STDMETHODCALLTYPE D3D11DeviceContext::RSSetState(ID3D11RasterizerState* pRasterizerState) {    
     auto rasterizerState = static_cast<D3D11RasterizerState*>(pRasterizerState);
-    
-    bool currScissorEnable = m_state.rs.state != nullptr
-      ? m_state.rs.state->Desc()->ScissorEnable
-      : false;
-    
-    bool nextScissorEnable = rasterizerState != nullptr
-      ? rasterizerState->Desc()->ScissorEnable
-      : false;
-
-    if (m_state.rs.state != rasterizerState) {
-      m_state.rs.state = rasterizerState;
-
-      // In D3D11, the rasterizer state defines whether the
-      // scissor test is enabled, so we have to update the
-      // scissor rectangles as well.
-      ApplyRasterizerState();
-
-      if (currScissorEnable != nextScissorEnable)
-        ApplyViewportState();
-    }
+    m_state.rs.state = rasterizerState;
   }
   
   
   void STDMETHODCALLTYPE D3D11DeviceContext::RSSetViewports(
           UINT                              NumViewports,
     const D3D11_VIEWPORT*                   pViewports) {
-    if (unlikely(NumViewports > m_state.rs.viewports.size()))
-      return;
-    
-    bool dirty = m_state.rs.numViewports != NumViewports;
-    m_state.rs.numViewports = NumViewports;
-    
-    for (uint32_t i = 0; i < NumViewports; i++) {
-      const D3D11_VIEWPORT& vp = m_state.rs.viewports[i];
-
-      dirty |= vp.TopLeftX != pViewports[i].TopLeftX
-            || vp.TopLeftY != pViewports[i].TopLeftY
-            || vp.Width    != pViewports[i].Width
-            || vp.Height   != pViewports[i].Height
-            || vp.MinDepth != pViewports[i].MinDepth
-            || vp.MaxDepth != pViewports[i].MaxDepth;
-      
-      m_state.rs.viewports[i] = pViewports[i];
-    }
-    
-    if (dirty)
-      ApplyViewportState();
   }
   
   
@@ -2505,14 +2462,6 @@ namespace dxvk {
 
         m_state.rs.scissors[i] = pRects[i];
       }
-    }
-
-    if (m_state.rs.state != nullptr && dirty) {
-      D3D11_RASTERIZER_DESC rsDesc;
-      m_state.rs.state->GetDesc(&rsDesc);
-      
-      if (rsDesc.ScissorEnable)
-        ApplyViewportState();
     }
   }
   
@@ -2759,116 +2708,6 @@ namespace dxvk {
     ] (DxvkContext* ctx) {
       ctx->setStencilReference(cStencilRef);
     });
-  }
-  
-  
-  void D3D11DeviceContext::ApplyRasterizerState() {
-    if (m_state.rs.state != nullptr) {
-      EmitCs([
-        cRasterizerState = m_state.rs.state
-      ] (DxvkContext* ctx) {
-        cRasterizerState->BindToContext(ctx);
-      });
-    } else {
-      EmitCs([] (DxvkContext* ctx) {
-        DxvkRasterizerState rsState;
-        InitDefaultRasterizerState(&rsState);
-
-        ctx->setRasterizerState(rsState);
-      });
-    }
-  }
-  
-  
-  void D3D11DeviceContext::ApplyViewportState() {
-    std::array<VkViewport, D3D11_VIEWPORT_AND_SCISSORRECT_OBJECT_COUNT_PER_PIPELINE> viewports;
-    std::array<VkRect2D,   D3D11_VIEWPORT_AND_SCISSORRECT_OBJECT_COUNT_PER_PIPELINE> scissors;
-
-    // The backend can't handle a viewport count of zero,
-    // so we should at least specify one empty viewport
-    uint32_t viewportCount = m_state.rs.numViewports;
-
-    if (unlikely(!viewportCount)) {
-      viewportCount = 1;
-      viewports[0] = VkViewport();
-      scissors [0] = VkRect2D();
-    }
-
-    // D3D11's coordinate system has its origin in the bottom left,
-    // but the viewport coordinates are aligned to the top-left
-    // corner so we can get away with flipping the viewport.
-    for (uint32_t i = 0; i < m_state.rs.numViewports; i++) {
-      const D3D11_VIEWPORT& vp = m_state.rs.viewports[i];
-      
-      viewports[i] = VkViewport {
-        vp.TopLeftX, vp.Height + vp.TopLeftY,
-        vp.Width,   -vp.Height,
-        vp.MinDepth, vp.MaxDepth,
-      };
-    }
-    
-    // Scissor rectangles. Vulkan does not provide an easy way
-    // to disable the scissor test, so we'll have to set scissor
-    // rects that are at least as large as the framebuffer.
-    bool enableScissorTest = false;
-    
-    if (m_state.rs.state != nullptr) {
-      D3D11_RASTERIZER_DESC rsDesc;
-      m_state.rs.state->GetDesc(&rsDesc);
-      enableScissorTest = rsDesc.ScissorEnable;
-    }
-    
-    for (uint32_t i = 0; i < m_state.rs.numViewports; i++) {
-      if (!enableScissorTest) {
-        scissors[i] = VkRect2D {
-          VkOffset2D { 0, 0 },
-          VkExtent2D {
-            D3D11_VIEWPORT_BOUNDS_MAX,
-            D3D11_VIEWPORT_BOUNDS_MAX } };
-      } else if (i >= m_state.rs.numScissors) {
-        scissors[i] = VkRect2D {
-          VkOffset2D { 0, 0 },
-          VkExtent2D { 0, 0 } };
-      } else {
-        D3D11_RECT sr = m_state.rs.scissors[i];
-        
-        VkOffset2D srPosA;
-        srPosA.x = std::max<int32_t>(0, sr.left);
-        srPosA.y = std::max<int32_t>(0, sr.top);
-        
-        VkOffset2D srPosB;
-        srPosB.x = std::max<int32_t>(srPosA.x, sr.right);
-        srPosB.y = std::max<int32_t>(srPosA.y, sr.bottom);
-        
-        VkExtent2D srSize;
-        srSize.width  = uint32_t(srPosB.x - srPosA.x);
-        srSize.height = uint32_t(srPosB.y - srPosA.y);
-        
-        scissors[i] = VkRect2D { srPosA, srSize };
-      }
-    }
-    
-    if (likely(viewportCount == 1)) {
-      EmitCs([
-        cViewport = viewports[0],
-        cScissor  = scissors[0]
-      ] (DxvkContext* ctx) {
-        ctx->setViewports(1,
-          &cViewport,
-          &cScissor);
-      });
-    } else {
-      EmitCs([
-        cViewportCount = viewportCount,
-        cViewports     = viewports,
-        cScissors      = scissors
-      ] (DxvkContext* ctx) {
-        ctx->setViewports(
-          cViewportCount,
-          cViewports.data(),
-          cScissors.data());
-      });
-    }
   }
 
   
@@ -3776,8 +3615,6 @@ namespace dxvk {
     ApplyBlendFactor();
     ApplyDepthStencilState();
     ApplyStencilRef();
-    ApplyRasterizerState();
-    ApplyViewportState();
 
     BindDrawBuffers(
       m_state.id.argBuffer.ptr(),

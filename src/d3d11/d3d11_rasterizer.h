@@ -32,27 +32,15 @@ namespace dxvk {
     void STDMETHODCALLTYPE GetDesc2(
             D3D11_RASTERIZER_DESC2* pDesc) final;
     
-    const D3D11_RASTERIZER_DESC2* Desc() const {
-      return &m_desc;
-    }
-    
-    void BindToContext(
-      const Rc<DxvkContext>&  ctx);
-    
     static D3D11_RASTERIZER_DESC2 PromoteDesc(
       const D3D11_RASTERIZER_DESC*  pDesc);
     
     static D3D11_RASTERIZER_DESC2 PromoteDesc(
       const D3D11_RASTERIZER_DESC1* pDesc);
     
-    static HRESULT NormalizeDesc(
-            D3D11_RASTERIZER_DESC2* pDesc);
-    
   private:
     
     D3D11_RASTERIZER_DESC2 m_desc;
-    DxvkRasterizerState    m_state;
-    DxvkDepthBias          m_depthBias;
     
   };
   

@@ -712,10 +712,6 @@ namespace dxvk {
     void ApplyDepthStencilState();
     
     void ApplyStencilRef();
-    
-    void ApplyRasterizerState();
-    
-    void ApplyViewportState();
 
     template<DxbcProgramType ShaderStage>
     void BindShader(

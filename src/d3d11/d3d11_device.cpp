@@ -1078,16 +1078,11 @@ namespace dxvk {
 
     if (!pRasterizerDesc)
       return E_INVALIDARG;
-
-    D3D11_RASTERIZER_DESC2 desc = D3D11RasterizerState::PromoteDesc(pRasterizerDesc);
-    
-    if (FAILED(D3D11RasterizerState::NormalizeDesc(&desc)))
-      return E_INVALIDARG;
     
     if (!ppRasterizerState)
       return S_FALSE;
     
-    *ppRasterizerState = m_rsStateObjects.Create(this, desc);
+    *ppRasterizerState = m_rsStateObjects.Create(this, D3D11RasterizerState::PromoteDesc(pRasterizerDesc));
     return S_OK;
   }
   
@@ -1099,16 +1094,11 @@ namespace dxvk {
     
     if (!pRasterizerDesc)
       return E_INVALIDARG;
-
-    D3D11_RASTERIZER_DESC2 desc = D3D11RasterizerState::PromoteDesc(pRasterizerDesc);
-    
-    if (FAILED(D3D11RasterizerState::NormalizeDesc(&desc)))
-      return E_INVALIDARG;
     
     if (!ppRasterizerState)
       return S_FALSE;
     
-    *ppRasterizerState = m_rsStateObjects.Create(this, desc);
+    *ppRasterizerState = m_rsStateObjects.Create(this, D3D11RasterizerState::PromoteDesc(pRasterizerDesc));
     return S_OK;
   }
   
@@ -1121,19 +1111,10 @@ namespace dxvk {
     if (!pRasterizerDesc)
       return E_INVALIDARG;
 
-    D3D11_RASTERIZER_DESC2 desc = *pRasterizerDesc;
-    
-    if (FAILED(D3D11RasterizerState::NormalizeDesc(&desc)))
-      return E_INVALIDARG;
-
-    if (desc.ConservativeRaster != D3D11_CONSERVATIVE_RASTERIZATION_MODE_OFF
-     && !m_dxvkDevice->extensions().extConservativeRasterization)
-      return E_INVALIDARG;
-
     if (!ppRasterizerState)
       return S_FALSE;
     
-    *ppRasterizerState = m_rsStateObjects.Create(this, desc);
+    *ppRasterizerState = m_rsStateObjects.Create(this, *pRasterizerDesc);
     return S_OK;
   }
   
