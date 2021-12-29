@@ -691,15 +691,13 @@ namespace dxvk {
     void SetDrawBuffers(
             ID3D11Buffer*                     pBufferForArgs,
             ID3D11Buffer*                     pBufferForCount);
-    
-    template<DxbcProgramType ShaderStage>
+
     void SetConstantBuffers(
             D3D11ConstantBufferBindings&      Bindings,
             UINT                              StartSlot,
             UINT                              NumBuffers,
             ID3D11Buffer* const*              ppConstantBuffers);
-    
-    template<DxbcProgramType ShaderStage>
+
     void SetConstantBuffers1(
             D3D11ConstantBufferBindings&      Bindings,
             UINT                              StartSlot,
@@ -707,15 +705,13 @@ namespace dxvk {
             ID3D11Buffer* const*              ppConstantBuffers,
       const UINT*                             pFirstConstant,
       const UINT*                             pNumConstants);
-    
-    template<DxbcProgramType ShaderStage>
+
     void SetSamplers(
             D3D11SamplerBindings&             Bindings,
             UINT                              StartSlot,
             UINT                              NumSamplers,
             ID3D11SamplerState* const*        ppSamplers);
-    
-    template<DxbcProgramType ShaderStage>
+
     void SetShaderResources(
             D3D11ShaderResourceBindings&      Bindings,
             UINT                              StartSlot,
@@ -760,11 +756,6 @@ namespace dxvk {
             DxvkLogicOpState*                 pLoState,
             DxvkMultisampleState*             pMsState,
             UINT                              SampleMask);
-
-    template<typename T>
-    const D3D11CommonShader* GetCommonShader(T* pShader) const {
-      return pShader != nullptr ? pShader->GetCommonShader() : nullptr;
-    }
 
   };
   

@@ -2,8 +2,6 @@
 
 #include "../dxvk/dxvk_device.h"
 
-#include "../dxbc/dxbc_util.h"
-
 #include "d3d11_include.h"
 
 namespace dxvk {
@@ -30,9 +28,6 @@ namespace dxvk {
   
   VkConservativeRasterizationModeEXT DecodeConservativeRasterizationMode(
           D3D11_CONSERVATIVE_RASTERIZATION_MODE Mode);
-
-  VkShaderStageFlagBits GetShaderStage(
-          DxbcProgramType           ProgramType);
   
   VkFormatFeatureFlags GetBufferFormatFeatures(
           UINT                      BindFlags);

@@ -36,9 +36,6 @@ namespace dxvk {
       info.usage  |= VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
       info.stages |= m_parent->GetEnabledShaderStages();
       info.access |= VK_ACCESS_UNIFORM_READ_BIT;
-
-      if (m_parent->GetOptions()->constantBufferRangeCheck)
-        info.usage |= VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
     }
     
     if (pDesc->BindFlags & D3D11_BIND_SHADER_RESOURCE) {
@@ -235,11 +232,6 @@ namespace dxvk {
                     |  VK_MEMORY_PROPERTY_HOST_COHERENT_BIT
                     |  VK_MEMORY_PROPERTY_HOST_CACHED_BIT;
         break;
-    }
-    
-    if (memoryFlags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT && m_parent->GetOptions()->apitraceMode) {
-      memoryFlags |= VK_MEMORY_PROPERTY_HOST_COHERENT_BIT
-                  |  VK_MEMORY_PROPERTY_HOST_CACHED_BIT;
     }
 
     return memoryFlags;

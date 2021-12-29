@@ -36,9 +36,7 @@ namespace dxvk {
     m_featureFlags  (FeatureFlags),
     m_dxvkDevice    (pContainer->GetDXVKDevice()),
     m_dxvkAdapter   (m_dxvkDevice->adapter()),
-    m_d3d11Formats  (m_dxvkAdapter),
-    m_d3d11Options  (m_dxvkDevice->instance()->config(), m_dxvkDevice),
-    m_dxbcOptions   (m_dxvkDevice, m_d3d11Options) {
+    m_d3d11Formats  (m_dxvkAdapter) {
     m_initializer = new D3D11Initializer(this);
     m_context     = new D3D11ImmediateContext(this, m_dxvkDevice);
   }
@@ -603,28 +601,11 @@ namespace dxvk {
           ID3D11ClassLinkage*         pClassLinkage,
           ID3D11VertexShader**        ppVertexShader) {
     InitReturnPtr(ppVertexShader);
-    D3D11CommonShader module;
-
-    DxbcModuleInfo moduleInfo;
-    moduleInfo.options = m_dxbcOptions;
-    moduleInfo.tess    = nullptr;
-    moduleInfo.xfb     = nullptr;
-
-    Sha1Hash hash = Sha1Hash::compute(
-      pShaderBytecode, BytecodeLength);
-    
-    HRESULT hr = CreateShaderModule(&module,
-      DxvkShaderKey(VK_SHADER_STAGE_VERTEX_BIT, hash),
-      pShaderBytecode, BytecodeLength, pClassLinkage,
-      &moduleInfo);
-    
-    if (FAILED(hr))
-      return hr;
     
     if (!ppVertexShader)
       return S_FALSE;
     
-    *ppVertexShader = ref(new D3D11VertexShader(this, module));
+    *ppVertexShader = ref(new D3D11VertexShader(this));
     return S_OK;
   }
   
@@ -635,28 +616,11 @@ namespace dxvk {
           ID3D11ClassLinkage*         pClassLinkage,
           ID3D11GeometryShader**      ppGeometryShader) {
     InitReturnPtr(ppGeometryShader);
-    D3D11CommonShader module;
-    
-    DxbcModuleInfo moduleInfo;
-    moduleInfo.options = m_dxbcOptions;
-    moduleInfo.tess    = nullptr;
-    moduleInfo.xfb     = nullptr;
-
-    Sha1Hash hash = Sha1Hash::compute(
-      pShaderBytecode, BytecodeLength);
-    
-    HRESULT hr = CreateShaderModule(&module,
-      DxvkShaderKey(VK_SHADER_STAGE_GEOMETRY_BIT, hash),
-      pShaderBytecode, BytecodeLength, pClassLinkage,
-      &moduleInfo);
-
-    if (FAILED(hr))
-      return hr;
     
     if (!ppGeometryShader)
       return S_FALSE;
     
-    *ppGeometryShader = ref(new D3D11GeometryShader(this, module));
+    *ppGeometryShader = ref(new D3D11GeometryShader(this));
     return S_OK;
   }
   
@@ -672,89 +636,11 @@ namespace dxvk {
           ID3D11ClassLinkage*         pClassLinkage,
           ID3D11GeometryShader**      ppGeometryShader) {
     InitReturnPtr(ppGeometryShader);
-    D3D11CommonShader module;
-
-    if (!m_dxvkDevice->features().extTransformFeedback.transformFeedback)
-      return DXGI_ERROR_INVALID_CALL;
-
-    // Zero-init some counterss so that we can increment
-    // them while walking over the stream output entries
-    DxbcXfbInfo xfb = { };
-
-    for (uint32_t i = 0; i < NumEntries; i++) {
-      const D3D11_SO_DECLARATION_ENTRY* so = &pSODeclaration[i];
-
-      if (so->OutputSlot >= D3D11_SO_BUFFER_SLOT_COUNT)
-        return E_INVALIDARG;
-
-      if (so->SemanticName != nullptr) {
-        if (so->Stream >= D3D11_SO_BUFFER_SLOT_COUNT
-         || so->StartComponent >= 4
-         || so->ComponentCount <  1
-         || so->ComponentCount >  4)
-          return E_INVALIDARG;
-        
-        DxbcXfbEntry* entry = &xfb.entries[xfb.entryCount++];
-        entry->semanticName   = so->SemanticName;
-        entry->semanticIndex  = so->SemanticIndex;
-        entry->componentIndex = so->StartComponent;
-        entry->componentCount = so->ComponentCount;
-        entry->streamId       = so->Stream;
-        entry->bufferId       = so->OutputSlot;
-        entry->offset         = xfb.strides[so->OutputSlot];
-      }
-
-      xfb.strides[so->OutputSlot] += so->ComponentCount * sizeof(uint32_t);
-    }
-    
-    // If necessary, override the buffer strides
-    for (uint32_t i = 0; i < NumStrides; i++)
-      xfb.strides[i] = pBufferStrides[i];
-
-    // Set stream to rasterize, if any
-    xfb.rasterizedStream = -1;
-    
-    if (RasterizedStream != D3D11_SO_NO_RASTERIZED_STREAM)
-      Logger::err("D3D11: CreateGeometryShaderWithStreamOutput: Rasterized stream not supported");
-    
-    // Compute hash from both the xfb info and the source
-    // code, because both influence the generated code
-    DxbcXfbInfo hashXfb = xfb;
-
-    std::vector<Sha1Data> chunks = {{
-      { pShaderBytecode, BytecodeLength  },
-      { &hashXfb,        sizeof(hashXfb) },
-    }};
-
-    for (uint32_t i = 0; i < hashXfb.entryCount; i++) {
-      const char* semantic = hashXfb.entries[i].semanticName;
-
-      if (semantic) {
-        chunks.push_back({ semantic, std::strlen(semantic) });
-        hashXfb.entries[i].semanticName = nullptr;
-      }
-    }
-
-    Sha1Hash hash = Sha1Hash::compute(chunks.size(), chunks.data());
-    
-    // Create the actual shader module
-    DxbcModuleInfo moduleInfo;
-    moduleInfo.options = m_dxbcOptions;
-    moduleInfo.tess    = nullptr;
-    moduleInfo.xfb     = &xfb;
-    
-    HRESULT hr = CreateShaderModule(&module,
-      DxvkShaderKey(VK_SHADER_STAGE_GEOMETRY_BIT, hash),
-      pShaderBytecode, BytecodeLength, pClassLinkage,
-      &moduleInfo);
-
-    if (FAILED(hr))
-      return E_INVALIDARG;
     
     if (!ppGeometryShader)
       return S_FALSE;
     
-    *ppGeometryShader = ref(new D3D11GeometryShader(this, module));
+    *ppGeometryShader = ref(new D3D11GeometryShader(this));
     return S_OK;
   }
   
@@ -765,29 +651,11 @@ namespace dxvk {
           ID3D11ClassLinkage*         pClassLinkage,
           ID3D11PixelShader**         ppPixelShader) {
     InitReturnPtr(ppPixelShader);
-    D3D11CommonShader module;
-    
-    DxbcModuleInfo moduleInfo;
-    moduleInfo.options = m_dxbcOptions;
-    moduleInfo.tess    = nullptr;
-    moduleInfo.xfb     = nullptr;
-
-    Sha1Hash hash = Sha1Hash::compute(
-      pShaderBytecode, BytecodeLength);
-    
-
-    HRESULT hr = CreateShaderModule(&module,
-      DxvkShaderKey(VK_SHADER_STAGE_FRAGMENT_BIT, hash),
-      pShaderBytecode, BytecodeLength, pClassLinkage,
-      &moduleInfo);
-
-    if (FAILED(hr))
-      return hr;
     
     if (!ppPixelShader)
       return S_FALSE;
     
-    *ppPixelShader = ref(new D3D11PixelShader(this, module));
+    *ppPixelShader = ref(new D3D11PixelShader(this));
     return S_OK;
   }
   
@@ -798,33 +666,11 @@ namespace dxvk {
           ID3D11ClassLinkage*         pClassLinkage,
           ID3D11HullShader**          ppHullShader) {
     InitReturnPtr(ppHullShader);
-    D3D11CommonShader module;
-    
-    DxbcTessInfo tessInfo;
-    tessInfo.maxTessFactor = float(m_d3d11Options.maxTessFactor);
-
-    DxbcModuleInfo moduleInfo;
-    moduleInfo.options = m_dxbcOptions;
-    moduleInfo.tess    = nullptr;
-    moduleInfo.xfb     = nullptr;
-
-    if (tessInfo.maxTessFactor >= 8.0f)
-      moduleInfo.tess = &tessInfo;
-
-    Sha1Hash hash = Sha1Hash::compute(
-      pShaderBytecode, BytecodeLength);
-    
-    HRESULT hr = CreateShaderModule(&module,
-      DxvkShaderKey(VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT, hash),
-      pShaderBytecode, BytecodeLength, pClassLinkage, &moduleInfo);
-
-    if (FAILED(hr))
-      return hr;
     
     if (!ppHullShader)
       return S_FALSE;
     
-    *ppHullShader = ref(new D3D11HullShader(this, module));
+    *ppHullShader = ref(new D3D11HullShader(this));
     return S_OK;
   }
   
@@ -835,27 +681,11 @@ namespace dxvk {
           ID3D11ClassLinkage*         pClassLinkage,
           ID3D11DomainShader**        ppDomainShader) {
     InitReturnPtr(ppDomainShader);
-    D3D11CommonShader module;
-    
-    DxbcModuleInfo moduleInfo;
-    moduleInfo.options = m_dxbcOptions;
-    moduleInfo.tess    = nullptr;
-    moduleInfo.xfb     = nullptr;
-
-    Sha1Hash hash = Sha1Hash::compute(
-      pShaderBytecode, BytecodeLength);
-    
-    HRESULT hr = CreateShaderModule(&module,
-      DxvkShaderKey(VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT, hash),
-      pShaderBytecode, BytecodeLength, pClassLinkage, &moduleInfo);
-
-    if (FAILED(hr))
-      return hr;
     
     if (ppDomainShader == nullptr)
       return S_FALSE;
     
-    *ppDomainShader = ref(new D3D11DomainShader(this, module));
+    *ppDomainShader = ref(new D3D11DomainShader(this));
     return S_OK;
   }
   
@@ -866,28 +696,11 @@ namespace dxvk {
           ID3D11ClassLinkage*         pClassLinkage,
           ID3D11ComputeShader**       ppComputeShader) {
     InitReturnPtr(ppComputeShader);
-    D3D11CommonShader module;
-    
-    DxbcModuleInfo moduleInfo;
-    moduleInfo.options = m_dxbcOptions;
-    moduleInfo.tess    = nullptr;
-    moduleInfo.xfb     = nullptr;
-
-    Sha1Hash hash = Sha1Hash::compute(
-      pShaderBytecode, BytecodeLength);
-    
-    HRESULT hr = CreateShaderModule(&module,
-      DxvkShaderKey(VK_SHADER_STAGE_COMPUTE_BIT, hash),
-      pShaderBytecode, BytecodeLength, pClassLinkage,
-      &moduleInfo);
-
-    if (FAILED(hr))
-      return hr;
     
     if (!ppComputeShader)
       return S_FALSE;
     
-    *ppComputeShader = ref(new D3D11ComputeShader(this, module));
+    *ppComputeShader = ref(new D3D11ComputeShader(this));
     return S_OK;
   }
   
@@ -1825,40 +1638,6 @@ namespace dxvk {
     }
     
     return enabled;
-  }
-  
-  
-  HRESULT D3D11Device::CreateShaderModule(
-          D3D11CommonShader*      pShaderModule,
-          DxvkShaderKey           ShaderKey,
-    const void*                   pShaderBytecode,
-          size_t                  BytecodeLength,
-          ID3D11ClassLinkage*     pClassLinkage,
-    const DxbcModuleInfo*         pModuleInfo) {
-    if (pClassLinkage != nullptr)
-      Logger::warn("D3D11Device::CreateShaderModule: Class linkage not supported");
-
-    D3D11CommonShader commonShader;
-
-    HRESULT hr = m_shaderModules.GetShaderModule(this,
-      &ShaderKey, pModuleInfo, pShaderBytecode, BytecodeLength,
-      &commonShader);
-
-    if (FAILED(hr))
-      return hr;
-
-    auto shader = commonShader.GetShader();
-
-    if (shader->flags().test(DxvkShaderFlag::ExportsStencilRef)
-     && !m_dxvkDevice->extensions().extShaderStencilExport)
-      return E_INVALIDARG;
-
-    if (shader->flags().test(DxvkShaderFlag::ExportsViewportIndexLayerFromVertexStage)
-     && !m_dxvkDevice->extensions().extShaderViewportIndexLayer)
-      return E_INVALIDARG;
-
-    *pShaderModule = std::move(commonShader);
-    return S_OK;
   }
 
 

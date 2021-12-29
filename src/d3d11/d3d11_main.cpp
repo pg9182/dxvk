@@ -5,10 +5,22 @@
 #include "../dxvk/dxvk_instance.h"
 
 #include "d3d11_device.h"
-#include "d3d11_enums.h"
 
 namespace dxvk {
   Logger Logger::s_instance("d3d11.log");
+}
+
+std::ostream& operator << (std::ostream& os, D3D_FEATURE_LEVEL e) {
+  switch (e) {
+    ENUM_NAME(D3D_FEATURE_LEVEL_9_1);
+    ENUM_NAME(D3D_FEATURE_LEVEL_9_2);
+    ENUM_NAME(D3D_FEATURE_LEVEL_9_3);
+    ENUM_NAME(D3D_FEATURE_LEVEL_10_0);
+    ENUM_NAME(D3D_FEATURE_LEVEL_10_1);
+    ENUM_NAME(D3D_FEATURE_LEVEL_11_0);
+    ENUM_NAME(D3D_FEATURE_LEVEL_11_1);
+    ENUM_DEFAULT(e);
+  }
 }
   
 extern "C" {

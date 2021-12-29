@@ -3,8 +3,6 @@
 #include <mutex>
 #include <vector>
 
-#include "../dxbc/dxbc_options.h"
-
 #include "../dxgi/dxgi_object.h"
 #include "../dxgi/dxgi_interfaces.h"
 
@@ -14,7 +12,6 @@
 
 #include "d3d11_cmdlist.h"
 #include "d3d11_initializer.h"
-#include "d3d11_options.h"
 #include "d3d11_shader.h"
 #include "d3d11_state.h"
 #include "d3d11_util.h"
@@ -408,10 +405,6 @@ namespace dxvk {
       return DxvkCsChunkRef(chunk, &m_csChunkPool);
     }
     
-    const D3D11Options* GetOptions() const {
-      return &m_d3d11Options;
-    }
-    
     static bool CheckFeatureLevelSupport(
       const Rc<DxvkInstance>& instance,
       const Rc<DxvkAdapter>&  adapter,
@@ -432,8 +425,6 @@ namespace dxvk {
     const Rc<DxvkAdapter>           m_dxvkAdapter;
     
     const DXGIVkFormatTable         m_d3d11Formats;
-    const D3D11Options              m_d3d11Options;
-    const DxbcOptions               m_dxbcOptions;
     
     DxvkCsChunkPool                 m_csChunkPool;
     
@@ -444,15 +435,6 @@ namespace dxvk {
     D3D11StateObjectSet<D3D11DepthStencilState> m_dsStateObjects;
     D3D11StateObjectSet<D3D11RasterizerState>   m_rsStateObjects;
     D3D11StateObjectSet<D3D11SamplerState>      m_samplerObjects;
-    D3D11ShaderModuleSet                        m_shaderModules;
-    
-    HRESULT CreateShaderModule(
-            D3D11CommonShader*      pShaderModule,
-            DxvkShaderKey           ShaderKey,
-      const void*                   pShaderBytecode,
-            size_t                  BytecodeLength,
-            ID3D11ClassLinkage*     pClassLinkage,
-      const DxbcModuleInfo*         pModuleInfo);
     
     HRESULT GetFormatSupportFlags(
             DXGI_FORMAT Format,

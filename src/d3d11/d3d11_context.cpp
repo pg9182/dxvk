@@ -5,8 +5,6 @@
 #include "d3d11_query.h"
 #include "d3d11_texture.h"
 
-#include "../dxbc/dxbc_util.h"
-
 namespace dxvk {
   
   D3D11DeviceContext::D3D11DeviceContext(
@@ -529,7 +527,7 @@ namespace dxvk {
           UINT                              StartSlot,
           UINT                              NumBuffers,
           ID3D11Buffer* const*              ppConstantBuffers) {    
-    SetConstantBuffers<DxbcProgramType::VertexShader>(
+    SetConstantBuffers(
       m_state.vs.constantBuffers,
       StartSlot, NumBuffers,
       ppConstantBuffers);
@@ -542,7 +540,7 @@ namespace dxvk {
           ID3D11Buffer* const*              ppConstantBuffers, 
     const UINT*                             pFirstConstant, 
     const UINT*                             pNumConstants) {    
-    SetConstantBuffers1<DxbcProgramType::VertexShader>(
+    SetConstantBuffers1(
       m_state.vs.constantBuffers,
       StartSlot, NumBuffers,
       ppConstantBuffers,
@@ -555,7 +553,7 @@ namespace dxvk {
           UINT                              StartSlot,
           UINT                              NumViews,
           ID3D11ShaderResourceView* const*  ppShaderResourceViews) {    
-    SetShaderResources<DxbcProgramType::VertexShader>(
+    SetShaderResources(
       m_state.vs.shaderResources,
       StartSlot, NumViews,
       ppShaderResourceViews);
@@ -566,7 +564,7 @@ namespace dxvk {
           UINT                              StartSlot,
           UINT                              NumSamplers,
           ID3D11SamplerState* const*        ppSamplers) {    
-    SetSamplers<DxbcProgramType::VertexShader>(
+    SetSamplers(
       m_state.vs.samplers,
       StartSlot, NumSamplers,
       ppSamplers);
@@ -643,7 +641,7 @@ namespace dxvk {
           UINT                              StartSlot,
           UINT                              NumViews,
           ID3D11ShaderResourceView* const*  ppShaderResourceViews) {    
-    SetShaderResources<DxbcProgramType::HullShader>(
+    SetShaderResources(
       m_state.hs.shaderResources,
       StartSlot, NumViews,
       ppShaderResourceViews);
@@ -654,7 +652,7 @@ namespace dxvk {
           UINT                              StartSlot,
           UINT                              NumBuffers,
           ID3D11Buffer* const*              ppConstantBuffers) {    
-    SetConstantBuffers<DxbcProgramType::HullShader>(
+    SetConstantBuffers(
       m_state.hs.constantBuffers,
       StartSlot, NumBuffers,
       ppConstantBuffers);
@@ -667,7 +665,7 @@ namespace dxvk {
           ID3D11Buffer* const*              ppConstantBuffers, 
     const UINT*                             pFirstConstant, 
     const UINT*                             pNumConstants) {    
-    SetConstantBuffers1<DxbcProgramType::HullShader>(
+    SetConstantBuffers1(
       m_state.hs.constantBuffers,
       StartSlot, NumBuffers,
       ppConstantBuffers,
@@ -680,7 +678,7 @@ namespace dxvk {
           UINT                              StartSlot,
           UINT                              NumSamplers,
           ID3D11SamplerState* const*        ppSamplers) {    
-    SetSamplers<DxbcProgramType::HullShader>(
+    SetSamplers(
       m_state.hs.samplers,
       StartSlot, NumSamplers,
       ppSamplers);
@@ -757,7 +755,7 @@ namespace dxvk {
           UINT                              StartSlot,
           UINT                              NumViews,
           ID3D11ShaderResourceView* const*  ppShaderResourceViews) {    
-    SetShaderResources<DxbcProgramType::DomainShader>(
+    SetShaderResources(
       m_state.ds.shaderResources,
       StartSlot, NumViews,
       ppShaderResourceViews);
@@ -768,7 +766,7 @@ namespace dxvk {
           UINT                              StartSlot,
           UINT                              NumBuffers,
           ID3D11Buffer* const*              ppConstantBuffers) {    
-    SetConstantBuffers<DxbcProgramType::DomainShader>(
+    SetConstantBuffers(
       m_state.ds.constantBuffers,
       StartSlot, NumBuffers,
       ppConstantBuffers);
@@ -781,7 +779,7 @@ namespace dxvk {
           ID3D11Buffer* const*              ppConstantBuffers,
     const UINT*                             pFirstConstant,
     const UINT*                             pNumConstants) {    
-    SetConstantBuffers1<DxbcProgramType::DomainShader>(
+    SetConstantBuffers1(
       m_state.ds.constantBuffers,
       StartSlot, NumBuffers,
       ppConstantBuffers,
@@ -794,7 +792,7 @@ namespace dxvk {
           UINT                              StartSlot,
           UINT                              NumSamplers,
           ID3D11SamplerState* const*        ppSamplers) {    
-    SetSamplers<DxbcProgramType::DomainShader>(
+    SetSamplers(
       m_state.ds.samplers,
       StartSlot, NumSamplers,
       ppSamplers);
@@ -877,7 +875,7 @@ namespace dxvk {
           UINT                              StartSlot,
           UINT                              NumBuffers,
           ID3D11Buffer* const*              ppConstantBuffers) {    
-    SetConstantBuffers<DxbcProgramType::GeometryShader>(
+    SetConstantBuffers(
       m_state.gs.constantBuffers,
       StartSlot, NumBuffers,
       ppConstantBuffers);
@@ -890,7 +888,7 @@ namespace dxvk {
           ID3D11Buffer* const*              ppConstantBuffers,
     const UINT*                             pFirstConstant, 
     const UINT*                             pNumConstants) {      
-    SetConstantBuffers1<DxbcProgramType::GeometryShader>(
+    SetConstantBuffers1(
       m_state.gs.constantBuffers,
       StartSlot, NumBuffers,
       ppConstantBuffers,
@@ -903,7 +901,7 @@ namespace dxvk {
           UINT                              StartSlot,
           UINT                              NumViews,
           ID3D11ShaderResourceView* const*  ppShaderResourceViews) {    
-    SetShaderResources<DxbcProgramType::GeometryShader>(
+    SetShaderResources(
       m_state.gs.shaderResources,
       StartSlot, NumViews,
       ppShaderResourceViews);
@@ -914,7 +912,7 @@ namespace dxvk {
           UINT                              StartSlot,
           UINT                              NumSamplers,
           ID3D11SamplerState* const*        ppSamplers) {    
-    SetSamplers<DxbcProgramType::GeometryShader>(
+    SetSamplers(
       m_state.gs.samplers,
       StartSlot, NumSamplers,
       ppSamplers);
@@ -991,7 +989,7 @@ namespace dxvk {
           UINT                              StartSlot,
           UINT                              NumBuffers,
           ID3D11Buffer* const*              ppConstantBuffers) {    
-    SetConstantBuffers<DxbcProgramType::PixelShader>(
+    SetConstantBuffers(
       m_state.ps.constantBuffers,
       StartSlot, NumBuffers,
       ppConstantBuffers);
@@ -1004,7 +1002,7 @@ namespace dxvk {
           ID3D11Buffer* const*              ppConstantBuffers, 
     const UINT*                             pFirstConstant, 
     const UINT*                             pNumConstants) {    
-    SetConstantBuffers1<DxbcProgramType::PixelShader>(
+    SetConstantBuffers1(
       m_state.ps.constantBuffers,
       StartSlot, NumBuffers,
       ppConstantBuffers,
@@ -1017,7 +1015,7 @@ namespace dxvk {
           UINT                              StartSlot,
           UINT                              NumViews,
           ID3D11ShaderResourceView* const*  ppShaderResourceViews) {    
-    SetShaderResources<DxbcProgramType::PixelShader>(
+    SetShaderResources(
       m_state.ps.shaderResources,
       StartSlot, NumViews,
       ppShaderResourceViews);
@@ -1028,7 +1026,7 @@ namespace dxvk {
           UINT                              StartSlot,
           UINT                              NumSamplers,
           ID3D11SamplerState* const*        ppSamplers) {    
-    SetSamplers<DxbcProgramType::PixelShader>(
+    SetSamplers(
       m_state.ps.samplers,
       StartSlot, NumSamplers,
       ppSamplers);
@@ -1105,7 +1103,7 @@ namespace dxvk {
           UINT                              StartSlot,
           UINT                              NumBuffers,
           ID3D11Buffer* const*              ppConstantBuffers) {    
-    SetConstantBuffers<DxbcProgramType::ComputeShader>(
+    SetConstantBuffers(
       m_state.cs.constantBuffers,
       StartSlot, NumBuffers,
       ppConstantBuffers);
@@ -1118,7 +1116,7 @@ namespace dxvk {
           ID3D11Buffer* const*              ppConstantBuffers, 
     const UINT*                             pFirstConstant, 
     const UINT*                             pNumConstants) {    
-    SetConstantBuffers1<DxbcProgramType::ComputeShader>(
+    SetConstantBuffers1(
       m_state.cs.constantBuffers,
       StartSlot, NumBuffers,
       ppConstantBuffers,
@@ -1131,7 +1129,7 @@ namespace dxvk {
           UINT                              StartSlot,
           UINT                              NumViews,
           ID3D11ShaderResourceView* const*  ppShaderResourceViews) {    
-    SetShaderResources<DxbcProgramType::ComputeShader>(
+    SetShaderResources(
       m_state.cs.shaderResources,
       StartSlot, NumViews,
       ppShaderResourceViews);
@@ -1142,7 +1140,7 @@ namespace dxvk {
           UINT                              StartSlot,
           UINT                              NumSamplers,
           ID3D11SamplerState* const*        ppSamplers) {    
-    SetSamplers<DxbcProgramType::ComputeShader>(
+    SetSamplers(
       m_state.cs.samplers,
       StartSlot, NumSamplers,
       ppSamplers);
@@ -1515,7 +1513,6 @@ namespace dxvk {
   }
 
 
-  template<DxbcProgramType ShaderStage>
   void D3D11DeviceContext::SetConstantBuffers(
           D3D11ConstantBufferBindings&      Bindings,
           UINT                              StartSlot,
@@ -1539,8 +1536,7 @@ namespace dxvk {
     }
   }
   
-  
-  template<DxbcProgramType ShaderStage>
+
   void D3D11DeviceContext::SetConstantBuffers1(
           D3D11ConstantBufferBindings&      Bindings,
           UINT                              StartSlot,
@@ -1595,8 +1591,7 @@ namespace dxvk {
     }
   }
   
-  
-  template<DxbcProgramType ShaderStage>
+
   void D3D11DeviceContext::SetSamplers(
           D3D11SamplerBindings&             Bindings,
           UINT                              StartSlot,
@@ -1611,8 +1606,7 @@ namespace dxvk {
     }
   }
   
-  
-  template<DxbcProgramType ShaderStage>
+
   void D3D11DeviceContext::SetShaderResources(
           D3D11ShaderResourceBindings&      Bindings,
           UINT                              StartSlot,
