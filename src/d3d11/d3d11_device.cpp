@@ -37,7 +37,7 @@ namespace dxvk {
     m_dxvkDevice    (pContainer->GetDXVKDevice()),
     m_dxvkAdapter   (m_dxvkDevice->adapter()),
     m_d3d11Formats  (m_dxvkAdapter) {
-    m_context     = new D3D11ImmediateContext(this, m_dxvkDevice);
+    m_context     = new D3D11ImmediateContext(this);
   }
   
   
@@ -805,7 +805,7 @@ namespace dxvk {
   HRESULT STDMETHODCALLTYPE D3D11Device::CreateDeferredContext(
           UINT                        ContextFlags,
           ID3D11DeviceContext**       ppDeferredContext) {
-    *ppDeferredContext = ref(new D3D11DeferredContext(this, m_dxvkDevice, ContextFlags));
+    *ppDeferredContext = ref(new D3D11DeferredContext(this, ContextFlags));
     return S_OK;
   }
   
@@ -813,7 +813,7 @@ namespace dxvk {
   HRESULT STDMETHODCALLTYPE D3D11Device::CreateDeferredContext1(
           UINT                        ContextFlags, 
           ID3D11DeviceContext1**      ppDeferredContext) {
-    *ppDeferredContext = ref(new D3D11DeferredContext(this, m_dxvkDevice, ContextFlags));
+    *ppDeferredContext = ref(new D3D11DeferredContext(this, ContextFlags));
     return S_OK;
   }
   
@@ -821,7 +821,7 @@ namespace dxvk {
   HRESULT STDMETHODCALLTYPE D3D11Device::CreateDeferredContext2(
           UINT                        ContextFlags, 
           ID3D11DeviceContext2**      ppDeferredContext) {
-    *ppDeferredContext = ref(new D3D11DeferredContext(this, m_dxvkDevice, ContextFlags));
+    *ppDeferredContext = ref(new D3D11DeferredContext(this, ContextFlags));
     return S_OK;
   }
   
@@ -829,7 +829,7 @@ namespace dxvk {
   HRESULT STDMETHODCALLTYPE D3D11Device::CreateDeferredContext3(
           UINT                        ContextFlags, 
           ID3D11DeviceContext3**      ppDeferredContext) {
-    *ppDeferredContext = ref(new D3D11DeferredContext(this, m_dxvkDevice, ContextFlags));
+    *ppDeferredContext = ref(new D3D11DeferredContext(this, ContextFlags));
     return S_OK;
   }
   

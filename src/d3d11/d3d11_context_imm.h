@@ -12,9 +12,7 @@ namespace dxvk {
     friend class D3D11SwapChain;
   public:
     
-    D3D11ImmediateContext(
-            D3D11Device*    pParent,
-      const Rc<DxvkDevice>& Device);
+    D3D11ImmediateContext(D3D11Device* pParent);
     ~D3D11ImmediateContext();
     
     HRESULT STDMETHODCALLTYPE QueryInterface(

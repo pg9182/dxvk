@@ -10,10 +10,8 @@ constexpr static uint32_t MaxPendingSubmits  = 6;
 
 namespace dxvk {
   
-  D3D11ImmediateContext::D3D11ImmediateContext(
-          D3D11Device*    pParent,
-    const Rc<DxvkDevice>& Device)
-  : D3D11DeviceContext(pParent, Device) {
+  D3D11ImmediateContext::D3D11ImmediateContext(D3D11Device* pParent)
+  : D3D11DeviceContext(pParent) {
   }
   
   

@@ -1,7 +1,6 @@
 #pragma once
 
 #include "d3d11_annotation.h"
-#include "d3d11_cmd.h"
 #include "d3d11_context_state.h"
 #include "d3d11_device_child.h"
 #include "d3d11_texture.h"
@@ -13,9 +12,7 @@ namespace dxvk {
   class D3D11DeviceContext : public D3D11DeviceChild<ID3D11DeviceContext4> {
   public:
     
-    D3D11DeviceContext(
-            D3D11Device*            pParent,
-      const Rc<DxvkDevice>&         Device);
+    D3D11DeviceContext(D3D11Device* pParent);
     ~D3D11DeviceContext();
     
     HRESULT STDMETHODCALLTYPE QueryInterface(
@@ -737,25 +734,6 @@ namespace dxvk {
             UINT                              StartSlot,
             UINT                              NumSamplers,
             ID3D11SamplerState**              ppSamplers);
-    
-    VkClearValue ConvertColorValue(
-      const FLOAT                             Color[4],
-      const DxvkFormatInfo*                   pFormatInfo);
-    
-    static void InitDefaultPrimitiveTopology(
-            DxvkInputAssemblyState*           pIaState);
-
-    static void InitDefaultRasterizerState(
-            DxvkRasterizerState*              pRsState);
-
-    static void InitDefaultDepthStencilState(
-            DxvkDepthStencilState*            pDsState);
-
-    static void InitDefaultBlendState(
-            DxvkBlendMode*                    pCbState,
-            DxvkLogicOpState*                 pLoState,
-            DxvkMultisampleState*             pMsState,
-            UINT                              SampleMask);
 
   };
   
