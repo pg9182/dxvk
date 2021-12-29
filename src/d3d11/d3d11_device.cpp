@@ -1061,9 +1061,6 @@ namespace dxvk {
 
     D3D11_DEPTH_STENCIL_DESC desc = *pDepthStencilDesc;
     
-    if (FAILED(D3D11DepthStencilState::NormalizeDesc(&desc)))
-      return E_INVALIDARG;
-    
     if (ppDepthStencilState != nullptr) {
       *ppDepthStencilState = m_dsStateObjects.Create(this, desc);
       return S_OK;

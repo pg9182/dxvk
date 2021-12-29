@@ -2357,12 +2357,10 @@ namespace dxvk {
     
     if (m_state.om.dsState != depthStencilState) {
       m_state.om.dsState = depthStencilState;
-      ApplyDepthStencilState();
     }
     
     if (m_state.om.stencilRef != StencilRef) {
       m_state.om.stencilRef = StencilRef;
-      ApplyStencilRef();
     }
   }
   
@@ -2680,33 +2678,6 @@ namespace dxvk {
         m_state.om.blendFactor[2], m_state.om.blendFactor[3] }
     ] (DxvkContext* ctx) {
       ctx->setBlendConstants(cBlendConstants);
-    });
-  }
-  
-  
-  void D3D11DeviceContext::ApplyDepthStencilState() {
-    if (m_state.om.dsState != nullptr) {
-      EmitCs([
-        cDepthStencilState = m_state.om.dsState
-      ] (DxvkContext* ctx) {
-        cDepthStencilState->BindToContext(ctx);
-      });
-    } else {
-      EmitCs([] (DxvkContext* ctx) {
-        DxvkDepthStencilState dsState;
-        InitDefaultDepthStencilState(&dsState);
-
-        ctx->setDepthStencilState(dsState);
-      });
-    }
-  }
-  
-  
-  void D3D11DeviceContext::ApplyStencilRef() {
-    EmitCs([
-      cStencilRef = m_state.om.stencilRef
-    ] (DxvkContext* ctx) {
-      ctx->setStencilReference(cStencilRef);
     });
   }
 
@@ -3598,8 +3569,6 @@ namespace dxvk {
     ApplyInputLayout();
     ApplyPrimitiveTopology();
     ApplyBlendFactor();
-    ApplyDepthStencilState();
-    ApplyStencilRef();
 
     BindDrawBuffers(
       m_state.id.argBuffer.ptr(),

@@ -708,10 +708,6 @@ namespace dxvk {
     void ApplyPrimitiveTopology();
     
     void ApplyBlendFactor();
-    
-    void ApplyDepthStencilState();
-    
-    void ApplyStencilRef();
 
     template<DxbcProgramType ShaderStage>
     void BindShader(
