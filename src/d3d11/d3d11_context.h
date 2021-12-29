@@ -1,9 +1,5 @@
 #pragma once
 
-#include "../dxvk/dxvk_adapter.h"
-#include "../dxvk/dxvk_cs.h"
-#include "../dxvk/dxvk_device.h"
-
 #include "d3d11_annotation.h"
 #include "d3d11_cmd.h"
 #include "d3d11_context_state.h"
@@ -15,14 +11,11 @@ namespace dxvk {
   class D3D11Device;
   
   class D3D11DeviceContext : public D3D11DeviceChild<ID3D11DeviceContext4> {
-    // Needed in order to call EmitCs for pushing markers
-    friend class D3D11UserDefinedAnnotation;
   public:
     
     D3D11DeviceContext(
             D3D11Device*            pParent,
-      const Rc<DxvkDevice>&         Device,
-            DxvkCsChunkFlags        CsFlags);
+      const Rc<DxvkDevice>&         Device);
     ~D3D11DeviceContext();
     
     HRESULT STDMETHODCALLTYPE QueryInterface(
@@ -693,87 +686,7 @@ namespace dxvk {
   protected:
     
     D3D11UserDefinedAnnotation  m_annotation;
-    
-    Rc<DxvkDevice>              m_device;
-    Rc<DxvkDataBuffer>          m_updateBuffer;
-    
-    DxvkCsChunkFlags            m_csFlags;
-    DxvkCsChunkRef              m_csChunk;
-    
     D3D11ContextState           m_state;
-    D3D11CmdData*               m_cmdData;
-
-    template<DxbcProgramType ShaderStage>
-    void BindShader(
-      const D3D11CommonShader*                pShaderModule);
-    
-    void BindFramebuffer();
-    
-    void BindDrawBuffers(
-            D3D11Buffer*                      pBufferForArgs,
-            D3D11Buffer*                      pBufferForCount);
-    
-    void BindVertexBuffer(
-            UINT                              Slot,
-            D3D11Buffer*                      pBuffer,
-            UINT                              Offset,
-            UINT                              Stride);
-    
-    void BindIndexBuffer(
-            D3D11Buffer*                      pBuffer,
-            UINT                              Offset,
-            DXGI_FORMAT                       Format);
-    
-    void BindXfbBuffer(
-            UINT                              Slot,
-            D3D11Buffer*                      pBuffer,
-            UINT                              Offset);
-    
-    void BindConstantBuffer(
-            UINT                              Slot,
-            D3D11Buffer*                      pBuffer,
-            UINT                              Offset,
-            UINT                              Length);
-    
-    void BindShaderResource(
-            UINT                              Slot,
-            D3D11ShaderResourceView*          pResource);
-    
-    void BindUnorderedAccessView(
-            UINT                              UavSlot,
-            D3D11UnorderedAccessView*         pUav,
-            UINT                              CtrSlot,
-            UINT                              Counter);
-
-    void CopyBuffer(
-            D3D11Buffer*                      pDstBuffer,
-            VkDeviceSize                      DstOffset,
-            D3D11Buffer*                      pSrcBuffer,
-            VkDeviceSize                      SrcOffset,
-            VkDeviceSize                      ByteCount);
-
-    void CopyImage(
-            D3D11CommonTexture*               pDstTexture,
-      const VkImageSubresourceLayers*         pDstLayers,
-            VkOffset3D                        DstOffset,
-            D3D11CommonTexture*               pSrcTexture,
-      const VkImageSubresourceLayers*         pSrcLayers,
-            VkOffset3D                        SrcOffset,
-            VkExtent3D                        SrcExtent);
-
-    void DiscardBuffer(
-            ID3D11Resource*                   pResource);
-    
-    void DiscardTexture(
-            ID3D11Resource*                   pResource,
-            UINT                              Subresource);
-
-    void UpdateImage(
-            D3D11CommonTexture*               pDstTexture,
-      const VkImageSubresource*               pDstSubresource,
-            VkOffset3D                        DstOffset,
-            VkExtent3D                        DstExtent,
-            DxvkBufferSlice                   StagingBuffer);
 
     void SetDrawBuffers(
             ID3D11Buffer*                     pBufferForArgs,
@@ -828,67 +741,10 @@ namespace dxvk {
             UINT                              StartSlot,
             UINT                              NumSamplers,
             ID3D11SamplerState**              ppSamplers);
-
-    void ResetState();
-
-    void RestoreState();
-    
-    template<DxbcProgramType Stage>
-    void RestoreConstantBuffers(
-            D3D11ConstantBufferBindings&      Bindings);
-    
-    template<DxbcProgramType Stage>
-    void RestoreShaderResources(
-            D3D11ShaderResourceBindings&      Bindings);
-    
-    template<DxbcProgramType Stage>
-    void RestoreUnorderedAccessViews(
-            D3D11UnorderedAccessBindings&     Bindings);
-    
-    bool TestRtvUavHazards(
-            UINT                              NumRTVs,
-            ID3D11RenderTargetView* const*    ppRTVs,
-            UINT                              NumUAVs,
-            ID3D11UnorderedAccessView* const* ppUAVs);
-    
-    template<DxbcProgramType ShaderStage>
-    bool TestSrvHazards(
-            D3D11ShaderResourceView*          pView);
-
-    template<DxbcProgramType ShaderStage, typename T>
-    void ResolveSrvHazards(
-            T*                                pView,
-            D3D11ShaderResourceBindings&      Bindings);
-    
-    template<typename T>
-    void ResolveCsSrvHazards(
-            T*                                pView);
-
-    template<typename T>
-    void ResolveOmSrvHazards(
-            T*                                pView);
-    
-    bool ResolveOmRtvHazards(
-            D3D11UnorderedAccessView*         pView);
-    
-    void ResolveOmUavHazards(
-            D3D11RenderTargetView*            pView);
-    
-    bool ValidateRenderTargets(
-            UINT                              NumViews,
-            ID3D11RenderTargetView* const*    ppRenderTargetViews,
-            ID3D11DepthStencilView*           pDepthStencilView);
     
     VkClearValue ConvertColorValue(
       const FLOAT                             Color[4],
       const DxvkFormatInfo*                   pFormatInfo);
-    
-    DxvkDataSlice AllocUpdateBufferSlice(size_t Size);
-    
-    DxvkBufferSlice AllocStagingBuffer(
-            VkDeviceSize                      Size);
-    
-    DxvkCsChunkRef AllocCsChunk();
     
     static void InitDefaultPrimitiveTopology(
             DxvkInputAssemblyState*           pIaState);
@@ -910,62 +766,6 @@ namespace dxvk {
       return pShader != nullptr ? pShader->GetCommonShader() : nullptr;
     }
 
-    static uint32_t GetIndirectCommandStride(const D3D11CmdDrawIndirectData* cmdData, uint32_t offset, uint32_t minStride) {
-      if (likely(cmdData->stride))
-        return cmdData->offset + cmdData->count * cmdData->stride == offset ? cmdData->stride : 0;
-
-      uint32_t stride = offset - cmdData->offset;
-      return stride >= minStride && stride <= 32 ? stride : 0;
-    }
-
-    static bool ValidateDrawBufferSize(ID3D11Buffer* pBuffer, UINT Offset, UINT Size) {
-      UINT bufferSize = 0;
-
-      if (likely(pBuffer != nullptr))
-        bufferSize = static_cast<D3D11Buffer*>(pBuffer)->Desc()->ByteWidth;
-
-      return bufferSize >= Offset + Size;
-    }
-    
-    template<typename Cmd>
-    void EmitCs(Cmd&& command) {
-      m_cmdData = nullptr;
-
-      if (unlikely(!m_csChunk->push(command))) {
-        EmitCsChunk(std::move(m_csChunk));
-        
-        m_csChunk = AllocCsChunk();
-        m_csChunk->push(command);
-      }
-    }
-
-    template<typename M, typename Cmd, typename... Args>
-    M* EmitCsCmd(Cmd&& command, Args&&... args) {
-      M* data = m_csChunk->pushCmd<M, Cmd, Args...>(
-        command, std::forward<Args>(args)...);
-
-      if (unlikely(!data)) {
-        EmitCsChunk(std::move(m_csChunk));
-        
-        m_csChunk = AllocCsChunk();
-        data = m_csChunk->pushCmd<M, Cmd, Args...>(
-          command, std::forward<Args>(args)...);
-      }
-
-      m_cmdData = data;
-      return data;
-    }
-    
-    void FlushCsChunk() {
-      if (likely(!m_csChunk->empty())) {
-        EmitCsChunk(std::move(m_csChunk));
-        m_csChunk = AllocCsChunk();
-        m_cmdData = nullptr;
-      }
-    }
-    
-    virtual void EmitCsChunk(DxvkCsChunkRef&& chunk) = 0;
-    
   };
   
 }

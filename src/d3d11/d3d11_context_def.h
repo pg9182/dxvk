@@ -5,9 +5,6 @@
 #include "d3d11_context.h"
 #include "d3d11_texture.h"
 
-#include <algorithm>
-#include <vector>
-
 namespace dxvk {
   
   struct D3D11DeferredContextMapEntry {
@@ -82,16 +79,8 @@ namespace dxvk {
            ID3DDeviceContextState**          ppPreviousState);
 
   private:
-    
+
     const UINT m_contextFlags;
-    
-    // Command list that we're recording
-    Com<D3D11CommandList> m_commandList;
-    
-    // Info about currently mapped (sub)resources. Using a vector
-    // here is reasonable since there will usually only be a small
-    // number of mapped resources per command list.
-    std::vector<D3D11DeferredContextMapEntry> m_mappedResources;
 
     HRESULT MapBuffer(
             ID3D11Resource*               pResource,
@@ -105,21 +94,6 @@ namespace dxvk {
             D3D11_MAP                     MapType,
             UINT                          MapFlags,
             D3D11DeferredContextMapEntry* pMapEntry);
-
-    Com<D3D11CommandList> CreateCommandList();
-    
-    void EmitCsChunk(DxvkCsChunkRef&& chunk);
-
-    static DxvkCsChunkFlags GetCsChunkFlags(
-            D3D11Device*                  pDevice);
-    
-    auto FindMapEntry(ID3D11Resource* pResource, UINT Subresource) {
-      return std::find_if(m_mappedResources.rbegin(), m_mappedResources.rend(),
-        [pResource, Subresource] (const D3D11DeferredContextMapEntry& entry) {
-          return entry.pResource   == pResource
-              && entry.Subresource == Subresource;
-        });
-    }
     
   };
   

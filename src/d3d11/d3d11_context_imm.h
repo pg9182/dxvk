@@ -1,9 +1,5 @@
 #pragma once
 
-#include "../util/util_time.h"
-
-#include "../util/sync/sync_signal.h"
-
 #include "d3d11_context.h"
 #include "d3d11_state_object.h"
 
@@ -109,21 +105,8 @@ namespace dxvk {
            ID3DDeviceContextState*           pState,
            ID3DDeviceContextState**          ppPreviousState);
 
-    void SynchronizeCsThread();
-    
   private:
-    
-    DxvkCsThread m_csThread;
-    bool         m_csIsBusy = false;
 
-    Rc<sync::CallbackFence> m_eventSignal;
-    uint64_t                m_eventCount = 0;
-
-    dxvk::high_resolution_clock::time_point m_lastFlush
-      = dxvk::high_resolution_clock::now();
-    
-    Com<D3D11DeviceContextState> m_stateObject;
-    
     HRESULT MapBuffer(
             D3D11Buffer*                pResource,
             D3D11_MAP                   MapType,
@@ -136,23 +119,6 @@ namespace dxvk {
             D3D11_MAP                   MapType,
             UINT                        MapFlags,
             D3D11_MAPPED_SUBRESOURCE*   pMappedResource);
-    
-    void UnmapImage(
-            D3D11CommonTexture*         pResource,
-            UINT                        Subresource);
-    
-    void SynchronizeDevice();
-    
-    bool WaitForResource(
-      const Rc<DxvkResource>&                 Resource,
-            D3D11_MAP                         MapType,
-            UINT                              MapFlags);
-    
-    void EmitCsChunk(DxvkCsChunkRef&& chunk);
-
-    void FlushImplicit(BOOL StrongHint);
-
-    void SignalEvent(HANDLE hEvent);
     
   };
   
