@@ -1324,7 +1324,6 @@ namespace dxvk {
   void STDMETHODCALLTYPE D3D11DeviceContext::IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY Topology) {    
     if (m_state.ia.primitiveTopology != Topology) {
       m_state.ia.primitiveTopology = Topology;
-      ApplyPrimitiveTopology();
     }
   }
   
@@ -2330,8 +2329,6 @@ namespace dxvk {
     if (BlendFactor != nullptr) {
       for (uint32_t i = 0; i < 4; i++)
         m_state.om.blendFactor[i] = BlendFactor[i];
-      
-      ApplyBlendFactor();
     }
   }
   
@@ -2604,50 +2601,6 @@ namespace dxvk {
 
     if (!std::exchange(s_errorShown, true))
       Logger::err("D3D11DeviceContext::SetHardwareProtectionState: Not implemented");
-  }
-  
-  
-  void D3D11DeviceContext::ApplyPrimitiveTopology() {
-    D3D11_PRIMITIVE_TOPOLOGY topology = m_state.ia.primitiveTopology;
-    DxvkInputAssemblyState iaState = { };
-
-    if (topology <= D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP_ADJ) {
-      static const std::array<DxvkInputAssemblyState, 14> s_iaStates = {{
-        { VK_PRIMITIVE_TOPOLOGY_MAX_ENUM,       VK_FALSE, 0 },
-        { VK_PRIMITIVE_TOPOLOGY_POINT_LIST,     VK_FALSE, 0 },
-        { VK_PRIMITIVE_TOPOLOGY_LINE_LIST,      VK_FALSE, 0 },
-        { VK_PRIMITIVE_TOPOLOGY_LINE_STRIP,     VK_TRUE,  0 },
-        { VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,  VK_FALSE, 0 },
-        { VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP, VK_TRUE,  0 },
-        { }, { }, { }, { }, // Random gap that exists for no reason
-        { VK_PRIMITIVE_TOPOLOGY_LINE_LIST_WITH_ADJACENCY,       VK_FALSE, 0 },
-        { VK_PRIMITIVE_TOPOLOGY_LINE_STRIP_WITH_ADJACENCY,      VK_TRUE,  0 },
-        { VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST_WITH_ADJACENCY,   VK_FALSE, 0 },
-        { VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP_WITH_ADJACENCY,  VK_TRUE,  0 },
-      }};
-
-      iaState = s_iaStates[uint32_t(topology)];
-    } else if (topology >= D3D11_PRIMITIVE_TOPOLOGY_1_CONTROL_POINT_PATCHLIST
-            && topology <= D3D11_PRIMITIVE_TOPOLOGY_32_CONTROL_POINT_PATCHLIST) {
-      // The number of control points per patch can be inferred from the enum value in D3D11
-      uint32_t vertexCount = uint32_t(topology - D3D11_PRIMITIVE_TOPOLOGY_1_CONTROL_POINT_PATCHLIST + 1);
-      iaState = { VK_PRIMITIVE_TOPOLOGY_PATCH_LIST, VK_FALSE, vertexCount };
-    }
-    
-    EmitCs([iaState] (DxvkContext* ctx) {
-      ctx->setInputAssemblyState(iaState);
-    });
-  }
-  
-  
-  void D3D11DeviceContext::ApplyBlendFactor() {
-    EmitCs([
-      cBlendConstants = DxvkBlendConstants {
-        m_state.om.blendFactor[0], m_state.om.blendFactor[1],
-        m_state.om.blendFactor[2], m_state.om.blendFactor[3] }
-    ] (DxvkContext* ctx) {
-      ctx->setBlendConstants(cBlendConstants);
-    });
   }
 
   
@@ -3534,9 +3487,6 @@ namespace dxvk {
     BindShader<DxbcProgramType::GeometryShader> (GetCommonShader(m_state.gs.shader.ptr()));
     BindShader<DxbcProgramType::PixelShader>    (GetCommonShader(m_state.ps.shader.ptr()));
     BindShader<DxbcProgramType::ComputeShader>  (GetCommonShader(m_state.cs.shader.ptr()));
-
-    ApplyPrimitiveTopology();
-    ApplyBlendFactor();
 
     BindDrawBuffers(
       m_state.id.argBuffer.ptr(),
