@@ -31,13 +31,6 @@ namespace dxvk {
             D3D11Buffer*                pBuffer,
       const D3D11_SUBRESOURCE_DATA*     pInitialData);
     
-    void InitTexture(
-            D3D11CommonTexture*         pTexture,
-      const D3D11_SUBRESOURCE_DATA*     pInitialData);
-
-    void InitUavCounter(
-            D3D11UnorderedAccessView*   pUav);
-    
   private:
 
     dxvk::mutex       m_mutex;
@@ -55,14 +48,6 @@ namespace dxvk {
 
     void InitHostVisibleBuffer(
             D3D11Buffer*                pBuffer,
-      const D3D11_SUBRESOURCE_DATA*     pInitialData);
-
-    void InitDeviceLocalTexture(
-            D3D11CommonTexture*         pTexture,
-      const D3D11_SUBRESOURCE_DATA*     pInitialData);
-
-    void InitHostVisibleTexture(
-            D3D11CommonTexture*         pTexture,
       const D3D11_SUBRESOURCE_DATA*     pInitialData);
     
     void FlushImplicit();

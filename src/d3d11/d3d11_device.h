@@ -444,19 +444,6 @@ namespace dxvk {
     BOOL GetImageTypeSupport(
             VkFormat    Format,
             VkImageType Type) const;
-
-    uint32_t GetViewPlaneIndex(
-            ID3D11Resource*         pResource,
-            DXGI_FORMAT             ViewFormat);
-    
-    template<typename Void>
-    void CopySubresourceData(
-            Void*                       pData,
-            UINT                        RowPitch,
-            UINT                        DepthPitch,
-            ID3D11Resource*             pResource,
-            UINT                        Subresource,
-      const D3D11_BOX*                  pBox);
     
     static D3D_FEATURE_LEVEL GetMaxFeatureLevel(
       const Rc<DxvkInstance>&           pInstance);

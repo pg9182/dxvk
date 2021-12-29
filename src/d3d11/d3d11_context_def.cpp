@@ -127,19 +127,12 @@ namespace dxvk {
           UINT                          MapFlags,
           D3D11DeferredContextMapEntry* pMapEntry) {
     D3D11Buffer* pBuffer = static_cast<D3D11Buffer*>(pResource);
-    
-    if (unlikely(pBuffer->GetMapMode() == D3D11_COMMON_BUFFER_MAP_MODE_NONE)) {
-      Logger::err("D3D11: Cannot map a device-local buffer");
-      return E_INVALIDARG;
-    }
-    
     pMapEntry->pResource    = pResource;
     pMapEntry->Subresource  = 0;
     pMapEntry->MapType      = D3D11_MAP_WRITE_DISCARD;
     pMapEntry->RowPitch     = pBuffer->Desc()->ByteWidth;
     pMapEntry->DepthPitch   = pBuffer->Desc()->ByteWidth;
     pMapEntry->MapPointer   = dummyDataPtr;
-    
     return S_OK;
   }
   
@@ -149,30 +142,13 @@ namespace dxvk {
           UINT                          Subresource,
           D3D11_MAP                     MapType,
           UINT                          MapFlags,
-          D3D11DeferredContextMapEntry* pMapEntry) {
-    D3D11CommonTexture* pTexture = GetCommonTexture(pResource);
-    
-    if (unlikely(pTexture->GetMapMode() == D3D11_COMMON_TEXTURE_MAP_MODE_NONE)) {
-      Logger::err("D3D11: Cannot map a device-local image");
-      return E_INVALIDARG;
-    }
-
-    if (unlikely(Subresource >= pTexture->CountSubresources()))
-      return E_INVALIDARG;
-    
-    VkFormat packedFormat = pTexture->GetPackedFormat();
-    
-    auto formatInfo = imageFormatInfo(packedFormat);
-    
-    auto layout = pTexture->GetSubresourceLayout(formatInfo->aspectMask, Subresource);
-    
+          D3D11DeferredContextMapEntry* pMapEntry) {    
     pMapEntry->pResource    = pResource;
     pMapEntry->Subresource  = Subresource;
     pMapEntry->MapType      = D3D11_MAP_WRITE_DISCARD;
-    pMapEntry->RowPitch     = layout.RowPitch;
-    pMapEntry->DepthPitch   = layout.DepthPitch;
+    pMapEntry->RowPitch     = 1; // dummy
+    pMapEntry->DepthPitch   = 1; // dummy
     pMapEntry->MapPointer   = dummyDataPtr;
-
     return S_OK;
   }
 

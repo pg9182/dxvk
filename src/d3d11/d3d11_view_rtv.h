@@ -1,17 +1,11 @@
 #pragma once
 
-#include "../dxvk/dxvk_device.h"
-
 #include "d3d11_device_child.h"
-#include "d3d11_view.h"
 
 namespace dxvk {
   
   class D3D11Device;
-  
-  /**
-   * \brief Render target view
-   */
+
   class D3D11RenderTargetView : public D3D11DeviceChild<ID3D11RenderTargetView1> {
     
   public:
@@ -31,30 +25,6 @@ namespace dxvk {
 
     void STDMETHODCALLTYPE GetDesc1(D3D11_RENDER_TARGET_VIEW_DESC1* pDesc) final;
 
-    const D3D11_VK_VIEW_INFO& GetViewInfo() const {
-      return m_info;
-    }
-
-    BOOL HasBindFlag(UINT Flags) const {
-      return m_info.BindFlags & Flags;
-    }
-
-    D3D11_RESOURCE_DIMENSION GetResourceType() const {
-      D3D11_RESOURCE_DIMENSION type;
-      m_resource->GetType(&type);
-      return type;
-    }
-    
-    Rc<DxvkImageView> GetImageView() const {
-      return m_view;
-    }
-    
-    VkImageLayout GetRenderLayout() const {
-      return m_view->imageInfo().tiling == VK_IMAGE_TILING_OPTIMAL
-        ? VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
-        : VK_IMAGE_LAYOUT_GENERAL;
-    }
-
     static HRESULT GetDescFromResource(
             ID3D11Resource*                   pResource,
             D3D11_RENDER_TARGET_VIEW_DESC1*   pDesc);
@@ -66,16 +36,11 @@ namespace dxvk {
     static HRESULT NormalizeDesc(
             ID3D11Resource*                   pResource,
             D3D11_RENDER_TARGET_VIEW_DESC1*   pDesc);
-    
-    static UINT GetPlaneSlice(
-      const D3D11_RENDER_TARGET_VIEW_DESC1*   pDesc);
 
   private:
     
     ID3D11Resource*                   m_resource;
     D3D11_RENDER_TARGET_VIEW_DESC1    m_desc;
-    D3D11_VK_VIEW_INFO                m_info;
-    Rc<DxvkImageView>                 m_view;
     
   };
   

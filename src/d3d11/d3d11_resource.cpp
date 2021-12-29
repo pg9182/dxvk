@@ -169,7 +169,7 @@ namespace dxvk {
       pDesc->BindFlags      = texture->Desc()->BindFlags;
       pDesc->CPUAccessFlags = texture->Desc()->CPUAccessFlags;
       pDesc->MiscFlags      = texture->Desc()->MiscFlags;
-      pDesc->DxgiUsage      = texture->GetDxgiUsage();
+      pDesc->DxgiUsage      = 0;
       return S_OK;
     } else {
       pDesc->Dim            = D3D11_RESOURCE_DIMENSION_UNKNOWN;
@@ -181,20 +181,6 @@ namespace dxvk {
       pDesc->DxgiUsage      = 0;
       return E_INVALIDARG;
     }
-  }
-
-
-  BOOL CheckResourceViewCompatibility(
-          ID3D11Resource*             pResource,
-          UINT                        BindFlags,
-          DXGI_FORMAT                 Format,
-          UINT                        Plane) {
-    auto texture = GetCommonTexture(pResource);
-    auto buffer  = GetCommonBuffer (pResource);
-    
-    return texture != nullptr
-      ? texture->CheckViewCompatibility(BindFlags, Format, Plane)
-      : buffer ->CheckViewCompatibility(BindFlags, Format);
   }
 
 

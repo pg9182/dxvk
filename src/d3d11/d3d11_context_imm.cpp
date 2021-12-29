@@ -187,12 +187,6 @@ namespace dxvk {
           D3D11_MAPPED_SUBRESOURCE*   pMappedResource) {
     if (unlikely(!pMappedResource))
       return E_INVALIDARG;
-
-    if (unlikely(pResource->GetMapMode() == D3D11_COMMON_BUFFER_MAP_MODE_NONE)) {
-      Logger::err("D3D11: Cannot map a device-local buffer");
-      return E_INVALIDARG;
-    }
-
     pMappedResource->pData      = dummyDataPtr;
     pMappedResource->RowPitch   = pResource->Desc()->ByteWidth;
     pMappedResource->DepthPitch = pResource->Desc()->ByteWidth;
@@ -206,41 +200,11 @@ namespace dxvk {
           D3D11_MAP                   MapType,
           UINT                        MapFlags,
           D3D11_MAPPED_SUBRESOURCE*   pMappedResource) {
-    const Rc<DxvkImage>  mappedImage  = pResource->GetImage();
-    const Rc<DxvkBuffer> mappedBuffer = pResource->GetMappedBuffer(Subresource);
-
-    auto mapMode = pResource->GetMapMode();
-    
-    if (unlikely(mapMode == D3D11_COMMON_TEXTURE_MAP_MODE_NONE)) {
-      Logger::err("D3D11: Cannot map a device-local image");
-      return E_INVALIDARG;
-    }
-
-    if (unlikely(Subresource >= pResource->CountSubresources()))
-      return E_INVALIDARG;
-    
-    if (likely(pMappedResource != nullptr)) {
-      // Resources with an unknown memory layout cannot return a pointer
-      if (pResource->Desc()->Usage         == D3D11_USAGE_DEFAULT
-       && pResource->Desc()->TextureLayout == D3D11_TEXTURE_LAYOUT_UNDEFINED)
-        return E_INVALIDARG;
-    } else {
-      if (pResource->Desc()->Usage != D3D11_USAGE_DEFAULT)
-        return E_INVALIDARG;
-    }
-
-    VkFormat packedFormat = m_parent->LookupPackedFormat(
-      pResource->Desc()->Format, pResource->GetFormatMode()).Format;
-    
-    auto formatInfo = imageFormatInfo(packedFormat);
-
     if (pMappedResource) {
-      auto layout = pResource->GetSubresourceLayout(formatInfo->aspectMask, Subresource);
       pMappedResource->pData      = dummyDataPtr;
-      pMappedResource->RowPitch   = layout.RowPitch;
-      pMappedResource->DepthPitch = layout.DepthPitch;
+      pMappedResource->RowPitch   = 1; // dummy
+      pMappedResource->DepthPitch = 1; // dummy
     }
-
     return S_OK;
   }
   
