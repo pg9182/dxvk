@@ -94,21 +94,12 @@ namespace dxvk {
       m_state.ps.shaderResources.views[i] = nullptr;
       m_state.cs.shaderResources.views[i] = nullptr;
     }
-
-    m_state.vs.shaderResources.hazardous.clear();
-    m_state.hs.shaderResources.hazardous.clear();
-    m_state.ds.shaderResources.hazardous.clear();
-    m_state.gs.shaderResources.hazardous.clear();
-    m_state.ps.shaderResources.hazardous.clear();
-    m_state.cs.shaderResources.hazardous.clear();
     
     // Default UAVs
     for (uint32_t i = 0; i < D3D11_1_UAV_SLOT_COUNT; i++) {
       m_state.ps.unorderedAccessViews[i] = nullptr;
       m_state.cs.unorderedAccessViews[i] = nullptr;
     }
-
-    m_state.cs.uavMask.clear();
 
     // Default ID state
     m_state.id.argBuffer = nullptr;
@@ -1151,7 +1142,6 @@ namespace dxvk {
     for (uint32_t i = 0; i < NumUAVs; i++) {
       auto uav = static_cast<D3D11UnorderedAccessView*>(ppUnorderedAccessViews[i]);
       m_state.cs.unorderedAccessViews[StartSlot + i] = uav;
-      m_state.cs.uavMask.set(StartSlot + i, uav != nullptr);
     }
   }
   

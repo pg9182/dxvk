@@ -1,8 +1,5 @@
-#include "../dxgi/dxgi_adapter.h"
-
-#include "../dxvk/dxvk_instance.h"
-
 #include "d3d11_device.h"
+#include "dxgi_factory.h"
 
 namespace dxvk {
   Logger Logger::s_instance("d3d11.log");
@@ -19,33 +16,6 @@ extern "C" {
           UINT                FeatureLevels,
           ID3D11Device**      ppDevice) {
     InitReturnPtr(ppDevice);
-
-    Rc<DxvkAdapter>  dxvkAdapter;
-    Rc<DxvkInstance> dxvkInstance;
-
-    Com<IDXGIDXVKAdapter> dxgiVkAdapter;
-    
-    // Try to find the corresponding Vulkan device for the DXGI adapter
-    if (SUCCEEDED(pAdapter->QueryInterface(__uuidof(IDXGIDXVKAdapter), reinterpret_cast<void**>(&dxgiVkAdapter)))) {
-      dxvkAdapter  = dxgiVkAdapter->GetDXVKAdapter();
-      dxvkInstance = dxgiVkAdapter->GetDXVKInstance();
-    } else {
-      Logger::warn("D3D11CoreCreateDevice: Adapter is not a DXVK adapter");
-      DXGI_ADAPTER_DESC desc;
-      pAdapter->GetDesc(&desc);
-
-      dxvkInstance = new DxvkInstance();
-      dxvkAdapter  = dxvkInstance->findAdapterByLuid(&desc.AdapterLuid);
-
-      if (dxvkAdapter == nullptr)
-        dxvkAdapter = dxvkInstance->findAdapterByDeviceId(desc.VendorId, desc.DeviceId);
-      
-      if (dxvkAdapter == nullptr)
-        dxvkAdapter = dxvkInstance->enumAdapters(0);
-
-      if (dxvkAdapter == nullptr)
-        return E_FAIL;
-    }
 
     D3D_FEATURE_LEVEL defaultFeatureLevels[] = {
       D3D_FEATURE_LEVEL_11_0,
@@ -106,13 +76,7 @@ extern "C" {
       return E_INVALIDARG;
     
     if (!pAdapter) {
-      // We'll treat everything as hardware, even if the
-      // Vulkan device is actually a software device.
-      if (DriverType != D3D_DRIVER_TYPE_HARDWARE)
-        Logger::warn("D3D11CreateDevice: Unsupported driver type");
-      
-      // We'll use the first adapter returned by a DXGI factory
-      hr = CreateDXGIFactory1(__uuidof(IDXGIFactory), reinterpret_cast<void**>(&dxgiFactory));
+      hr = (new DxgiFactory(0))->QueryInterface(__uuidof(IDXGIFactory), reinterpret_cast<void**>(&dxgiFactory));
 
       if (FAILED(hr)) {
         Logger::err("D3D11CreateDevice: Failed to create a DXGI factory");
@@ -126,22 +90,15 @@ extern "C" {
         return hr;
       }
     } else {
-      // We should be able to query the DXGI factory from the adapter
       if (FAILED(dxgiAdapter->GetParent(__uuidof(IDXGIFactory), reinterpret_cast<void**>(&dxgiFactory)))) {
         Logger::err("D3D11CreateDevice: Failed to query DXGI factory from DXGI adapter");
         return E_INVALIDARG;
       }
-      
-      // In theory we could ignore these, but the Microsoft docs explicitly
-      // state that we need to return E_INVALIDARG in case the arguments are
-      // invalid. Both the driver type and software parameter can only be
-      // set if the adapter itself is unspecified.
-      // See: https://msdn.microsoft.com/en-us/library/windows/desktop/ff476082(v=vs.85).aspx
+
       if (DriverType != D3D_DRIVER_TYPE_UNKNOWN || Software)
         return E_INVALIDARG;
     }
-    
-    // Create the actual device
+
     hr = D3D11CoreCreateDevice(
       dxgiFactory.ptr(), dxgiAdapter.ptr(),
       Flags, pFeatureLevels, FeatureLevels,

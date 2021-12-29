@@ -1,9 +1,9 @@
 d3d11_res = wrc_generator.process('version.rc')
 
-dxgi_common_src = [
-  '../dxgi/dxgi_format.cpp',
-  '../dxgi/dxgi_monitor.cpp',
-  '../dxgi/dxgi_swapchain.cpp',
+dxgi_src = [
+  'dxgi_adapter.cpp',
+  'dxgi_factory.cpp',
+  'dxgi_output.cpp',
 ]
 
 d3d11_src = [
@@ -33,14 +33,9 @@ d3d11_src = [
   'd3d11_view_uav.cpp',
 ]
 
-d3d11_dll = shared_library('d3d11'+dll_ext, dxgi_common_src + d3d11_src, d3d11_res,
+d3d11_dll = shared_library('d3d11'+dll_ext, dxgi_src + d3d11_src, d3d11_res,
   name_prefix         : '',
-  dependencies        : [ lib_dxgi, dxvk_dep ],
-  include_directories : dxvk_include_path,
+  link_with           : [ util_lib ],
   install             : true,
   vs_module_defs      : 'd3d11'+def_spec_ext,
   override_options    : ['cpp_std='+dxvk_cpp_std])
-
-d3d11_dep = declare_dependency(
-  link_with           : [ d3d11_dll ],
-  include_directories : [ dxvk_include_path ])

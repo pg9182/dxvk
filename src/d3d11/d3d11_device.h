@@ -1,7 +1,6 @@
 #pragma once
 
-#include "../dxgi/dxgi_object.h"
-#include "../dxgi/dxgi_interfaces.h"
+#include "dxgi_object.h"
 
 #include "../util/com/com_private_data.h"
 
@@ -24,16 +23,9 @@ namespace dxvk {
   class D3D11Texture1D;
   class D3D11Texture2D;
   class D3D11Texture3D;
-  
-  /**
-   * \brief D3D11 device implementation
-   * 
-   * Implements the ID3D11Device interfaces
-   * as part of a \ref D3D11DeviceContainer.
-   */
+
+
   class D3D11Device final : public ID3D11Device5 {
-    /// Maximum number of resource init commands per command buffer
-    constexpr static uint64_t InitCommandThreshold = 50;
   public:
     
     D3D11Device(
@@ -387,40 +379,8 @@ namespace dxvk {
     
   };
 
-  class WineDXGISwapChainFactory : public IWineDXGISwapChainFactory {
-    
-  public:
-    
-    WineDXGISwapChainFactory(
-            D3D11DXGIDevice*        pContainer,
-            D3D11Device*            pDevice);
-    
-    ULONG STDMETHODCALLTYPE AddRef();
-    
-    ULONG STDMETHODCALLTYPE Release();
-    
-    HRESULT STDMETHODCALLTYPE QueryInterface(
-            REFIID                  riid,
-            void**                  ppvObject);
-    
-    HRESULT STDMETHODCALLTYPE CreateSwapChainForHwnd(
-            IDXGIFactory*           pFactory,
-            HWND                    hWnd,
-      const DXGI_SWAP_CHAIN_DESC1*  pDesc,
-      const DXGI_SWAP_CHAIN_FULLSCREEN_DESC* pFullscreenDesc,
-            IDXGIOutput*            pRestrictToOutput,
-            IDXGISwapChain1**       ppSwapChain);
-    
-  private:
-    
-    D3D11DXGIDevice* m_container;
-    D3D11Device*     m_device;
-    
-  };
-
 
   class D3D11DXGIDevice : public DxgiObject<IDXGIDevice4> {
-    constexpr static uint32_t DefaultFrameLatency = 3;
   public:
     
     D3D11DXGIDevice(
@@ -495,7 +455,6 @@ namespace dxvk {
 
     Com<IDXGIAdapter>        m_dxgiAdapter;
     D3D11Device              m_d3d11Device;
-    WineDXGISwapChainFactory m_wineFactory;
 
   };
   

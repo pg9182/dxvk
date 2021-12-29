@@ -1,7 +1,5 @@
 #pragma once
 
-#include "../dxgi/dxgi_format.h"
-
 #include "d3d11_device_child.h"
 #include "d3d11_resource.h"
 

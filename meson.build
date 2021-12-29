@@ -46,9 +46,6 @@ if not dxvk_is_msvc
   endif
 endif
 
-dxvk_include_path = include_directories('./include')
-dxvk_library_path = meson.source_root() + '/lib'
-
 dxvk_extradep = [ ]
 
 if dxvk_is_msvc
@@ -64,9 +61,7 @@ if dxvk_compiler.has_argument('-msse3')
   add_project_arguments('-msse3', language: ['c', 'cpp'])
 endif
 
-lib_vulkan  = dxvk_compiler.find_library('vulkan-1', dirs : dxvk_library_path)
 lib_d3d11   = dxvk_compiler.find_library('d3d11')
-lib_dxgi    = dxvk_compiler.find_library('dxgi')
 
 exe_ext = ''
 dll_ext = ''
@@ -78,15 +73,6 @@ else
 endif
 
 def_spec_ext = '.def'
-
-glsl_compiler = find_program('glslangValidator')
-glsl_args = [ '-V', '--vn', '@BASENAME@', '@INPUT@', '-o', '@OUTPUT@' ]
-if run_command(glsl_compiler, [ '--quiet', '--version' ]).returncode() == 0
-    glsl_args += [ '--quiet' ]
-endif
-glsl_generator = generator(glsl_compiler,
-  output    : [ '@BASENAME@.h' ],
-  arguments : glsl_args)
 
 if dxvk_is_msvc
   wrc_generator = generator(wrc,

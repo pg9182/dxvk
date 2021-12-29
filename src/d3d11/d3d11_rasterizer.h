@@ -1,7 +1,5 @@
 #pragma once
 
-#include "../dxvk/dxvk_device.h"
-
 #include "d3d11_device_child.h"
 
 namespace dxvk {
