@@ -8,7 +8,6 @@
 #include "d3d11_cmdlist.h"
 #include "d3d11_shader.h"
 #include "d3d11_state.h"
-#include "d3d11_util.h"
 
 namespace dxvk {
   class DxgiAdapter;

@@ -4,13 +4,6 @@
 
 namespace dxvk {
 
-  /**
-   * \brief Common resource description
-   * 
-   * Stores the usage and bind flags of a resource
-   * Can be used to quickly determine whether it is
-   * legal to create a view for a given resource.
-   */
   struct D3D11_COMMON_RESOURCE_DESC {
     D3D11_RESOURCE_DIMENSION  Dim;
     DXGI_FORMAT               Format;
@@ -21,10 +14,6 @@ namespace dxvk {
     UINT                      DxgiUsage;
   };
   
-
-  /**
-   * \brief IDXGIResource implementation for D3D11 resources
-   */
   class D3D11DXGIResource : public IDXGIResource1 {
 
   public:
@@ -92,37 +81,13 @@ namespace dxvk {
 
   };
 
-
-  /**
-   * \brief Queries common resource description
-   * 
-   * \param [in] pResource The resource to query
-   * \param [out] pDesc Resource description
-   * \returns \c S_OK on success, or \c E_INVALIDARG
-   */
   HRESULT GetCommonResourceDesc(
           ID3D11Resource*             pResource,
           D3D11_COMMON_RESOURCE_DESC* pDesc);
-  
-  /**
-   * \brief Increments private reference count of a resource
-   * 
-   * Helper method that figures out the exact type of
-   * the resource and calls its \c AddRefPrivate method.
-   * \param [in] pResource The resource to reference
-   * \returns \c S_OK, or \c E_INVALIDARG for an invalid resource
-   */
+
   HRESULT ResourceAddRefPrivate(
           ID3D11Resource*             pResource);
-  
-  /**
-   * \brief Decrements private reference count of a resource
-   * 
-   * Helper method that figures out the exact type of
-   * the resource and calls its \c ReleasePrivate method.
-   * \param [in] pResource The resource to reference
-   * \returns \c S_OK, or \c E_INVALIDARG for an invalid resource
-   */
+
   HRESULT ResourceReleasePrivate(
           ID3D11Resource*             pResource);
 

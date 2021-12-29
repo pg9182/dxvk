@@ -1,6 +1,5 @@
 #include "d3d11_device.h"
 #include "d3d11_sampler.h"
-#include "d3d11_util.h"
 
 namespace dxvk {
   

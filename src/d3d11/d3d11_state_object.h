@@ -6,14 +6,6 @@
 
 namespace dxvk {
 
-  /**
-   * \brief Device context state implementation
-   *
-   * This is an opaque interface in D3D11, and we only
-   * implement the state block-like functionality, not
-   * the methods to disable certain context and device
-   * interfaces based on the emulated device IID.
-   */
   class D3D11DeviceContextState : public D3D11DeviceChild<ID3DDeviceContextState> {
 
   public:

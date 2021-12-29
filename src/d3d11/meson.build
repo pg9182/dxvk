@@ -27,7 +27,6 @@ d3d11_src = [
   'd3d11_state_object.cpp',
   'd3d11_swapchain.cpp',
   'd3d11_texture.cpp',
-  'd3d11_util.cpp',
   'd3d11_view_dsv.cpp',
   'd3d11_view_rtv.cpp',
   'd3d11_view_srv.cpp',
