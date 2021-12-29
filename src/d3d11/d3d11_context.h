@@ -745,10 +745,6 @@ namespace dxvk {
             UINT                              Offset,
             UINT                              Length);
     
-    void BindSampler(
-            UINT                              Slot,
-            D3D11SamplerState*                pSampler);
-    
     void BindShaderResource(
             UINT                              Slot,
             D3D11ShaderResourceView*          pResource);
@@ -850,10 +846,6 @@ namespace dxvk {
     template<DxbcProgramType Stage>
     void RestoreConstantBuffers(
             D3D11ConstantBufferBindings&      Bindings);
-    
-    template<DxbcProgramType Stage>
-    void RestoreSamplers(
-            D3D11SamplerBindings&             Bindings);
     
     template<DxbcProgramType Stage>
     void RestoreShaderResources(

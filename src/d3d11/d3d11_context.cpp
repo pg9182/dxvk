@@ -2853,18 +2853,6 @@ namespace dxvk {
   }
   
   
-  void D3D11DeviceContext::BindSampler(
-          UINT                              Slot,
-          D3D11SamplerState*                pSampler) {
-    EmitCs([
-      cSlotId   = Slot,
-      cSampler  = pSampler != nullptr ? pSampler->GetDXVKSampler() : nullptr
-    ] (DxvkContext* ctx) {
-      ctx->bindResourceSampler(cSlotId, cSampler);
-    });
-  }
-  
-  
   void D3D11DeviceContext::BindShaderResource(
           UINT                              Slot,
           D3D11ShaderResourceView*          pResource) {
@@ -3407,14 +3395,11 @@ namespace dxvk {
           UINT                              StartSlot,
           UINT                              NumSamplers,
           ID3D11SamplerState* const*        ppSamplers) {
-    uint32_t slotId = computeSamplerBinding(ShaderStage, StartSlot);
-    
     for (uint32_t i = 0; i < NumSamplers; i++) {
       auto sampler = static_cast<D3D11SamplerState*>(ppSamplers[i]);
       
       if (Bindings[StartSlot + i] != sampler) {
         Bindings[StartSlot + i] = sampler;
-        BindSampler(slotId + i, sampler);
       }
     }
   }
@@ -3642,13 +3627,6 @@ namespace dxvk {
     RestoreConstantBuffers<DxbcProgramType::PixelShader>    (m_state.ps.constantBuffers);
     RestoreConstantBuffers<DxbcProgramType::ComputeShader>  (m_state.cs.constantBuffers);
     
-    RestoreSamplers<DxbcProgramType::VertexShader>  (m_state.vs.samplers);
-    RestoreSamplers<DxbcProgramType::HullShader>    (m_state.hs.samplers);
-    RestoreSamplers<DxbcProgramType::DomainShader>  (m_state.ds.samplers);
-    RestoreSamplers<DxbcProgramType::GeometryShader>(m_state.gs.samplers);
-    RestoreSamplers<DxbcProgramType::PixelShader>   (m_state.ps.samplers);
-    RestoreSamplers<DxbcProgramType::ComputeShader> (m_state.cs.samplers);
-    
     RestoreShaderResources<DxbcProgramType::VertexShader>   (m_state.vs.shaderResources);
     RestoreShaderResources<DxbcProgramType::HullShader>     (m_state.hs.shaderResources);
     RestoreShaderResources<DxbcProgramType::DomainShader>   (m_state.ds.shaderResources);
@@ -3670,16 +3648,6 @@ namespace dxvk {
       BindConstantBuffer(slotId + i, Bindings[i].buffer.ptr(),
         Bindings[i].constantOffset, Bindings[i].constantBound);
     }
-  }
-  
-  
-  template<DxbcProgramType Stage>
-  void D3D11DeviceContext::RestoreSamplers(
-          D3D11SamplerBindings&             Bindings) {
-    uint32_t slotId = computeSamplerBinding(Stage, 0);
-    
-    for (uint32_t i = 0; i < Bindings.size(); i++)
-      BindSampler(slotId + i, Bindings[i]);
   }
   
   

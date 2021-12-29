@@ -1,7 +1,5 @@
 #pragma once
 
-#include "../dxvk/dxvk_device.h"
-
 #include "d3d11_device_child.h"
 
 namespace dxvk {
@@ -26,25 +24,12 @@ namespace dxvk {
     void STDMETHODCALLTYPE GetDesc(
             D3D11_SAMPLER_DESC* pDesc) final;
     
-    Rc<DxvkSampler> GetDXVKSampler() const {
-      return m_sampler;
-    }
-    
     static HRESULT NormalizeDesc(
             D3D11_SAMPLER_DESC* pDesc);
     
   private:
     
     D3D11_SAMPLER_DESC m_desc;
-    Rc<DxvkSampler>    m_sampler;
-
-    std::atomic<uint32_t> m_refCount = { 0u };
-
-    static bool ValidateAddressMode(
-            D3D11_TEXTURE_ADDRESS_MODE  Mode);
-
-    static bool ValidateComparisonFunc(
-            D3D11_COMPARISON_FUNC       Comparison);
     
   };
   

@@ -1129,9 +1129,6 @@ namespace dxvk {
 
     D3D11_SAMPLER_DESC desc = *pSamplerDesc;
     
-    if (FAILED(D3D11SamplerState::NormalizeDesc(&desc)))
-      return E_INVALIDARG;
-    
     if (ppSamplerState == nullptr)
       return S_FALSE;
     
